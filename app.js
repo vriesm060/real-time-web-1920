@@ -91,3 +91,5 @@ app.get('/trip/:id', function (req, res) {
     url: url
   });
 });
+
+server.listen(process.env.PORT);
