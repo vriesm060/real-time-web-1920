@@ -1,0 +1,79 @@
+/********************
+  Login
+********************/
+
+.login-overlay {
+  position: fixed;
+  z-index: 10;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  @include prefix(display, flex);
+  @include prefix(justify-content, center);
+  @include prefix(align-items, center);
+  opacity: 0;
+  background-color: rgba(115,0,90,.9);
+  @include prefix(pointer-events, none);
+  @include prefix(transition, opacity 1s ease);
+
+  &.show {
+    opacity: 1;
+    @include prefix(pointer-events, auto);
+  }
+
+  & .login-modal {
+    display: block;
+    width: 100%;
+    max-width: 27.5rem;
+    margin: $spacing-unit;
+
+    & h1,
+    & h2,
+    & p {
+      margin: #{.5 * $spacing-unit};
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+    }
+
+    & .login {
+      @include prefix(display, flex);
+      @include prefix(flex-direction, column);
+
+      & > input {
+        display: block;
+        width: calc(100% - #{$spacing-unit});
+        height: #{2 * $spacing-unit};
+        padding: 1.25rem;
+        border: 0;
+        border-radius: .625rem;
+        margin: #{.5 * $spacing-unit};
+        background-color: $color-white;
+      }
+
+      & > button[type='submit'] {
+        display: block;
+        width: calc(100% - #{$spacing-unit});
+        min-height: #{2 * $spacing-unit};
+        padding: 1.25rem;
+        border: .325rem solid $color-secondary;
+        border-radius: $spacing-unit;
+        margin: #{.5 * $spacing-unit};
+        color: $color-secondary;
+        background-color: transparent;
+        font-family: $heading-ff;
+        cursor: pointer;
+        @include prefix(transition, all .3s ease);
+
+        &:hover,
+        &:focus {
+          color: $color-primary;
+          background-color: $color-secondary;
+        }
+      }
+    }
+  }
+}

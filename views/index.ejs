@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <%- include('partials/head') %>
+  <body>
+
+    <main class="route homepage show">
+      <h1 class="title">Stay at Home Roadtrip</h1>
+
+      <form class="travel-input" action="/trip" method="post">
+        <input type="text" name="username" placeholder="Jouw naam" required value="Max">
+        <input type="text" name="trip" placeholder="Naam van je trip" required value="Vakantie 2020">
+        <input type="text" name="location" placeholder="Bestemming" required value="Amsterdam">
+        <button type="submit">Go trippin</button>
+      </form>
+    </main>
+
+    <%- include('partials/footer') %>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+/********************
+  Travel input
+********************/
+
+.travel-input {
+  @include prefix(display, flex);
+  @include prefix(flex-direction, column);
+  max-width: 35rem;
+  padding: $spacing-unit;
+  margin: 0 auto;
+
+  & > input {
+    display: block;
+    height: #{2 * $spacing-unit};
+    padding: 1.25rem;
+    border: 0;
+    border-radius: .625rem;
+    margin: #{.5 * $spacing-unit};
+    background-color: $color-white;
+  }
+
+  & > button[type='submit'] {
+    display: block;
+    min-height: #{2 * $spacing-unit};
+    padding: 1.25rem;
+    border: .325rem solid $color-secondary;
+    border-radius: $spacing-unit;
+    margin: #{.5 * $spacing-unit};
+    color: $color-secondary;
+    background-color: transparent;
+    font-family: $heading-ff;
+    cursor: pointer;
+    @include prefix(transition, all .3s ease);
+
+    &:hover,
+    &:focus {
+      color: $color-primary;
+      background-color: $color-secondary;
+    }
+  }
+}

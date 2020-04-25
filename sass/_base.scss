@@ -1,0 +1,53 @@
+/********************
+  Fonts
+********************/
+
+$base-ff:              'Kreon Light', serif;
+$base-fz:              1em;
+$base-fw:              400;
+$base-lh:              1.7;
+
+$heading-ff:           'Lily Script One';
+$heading-fz:           3em;
+$heading-fw:           400;
+$heading-lh:           1.3;
+
+$form-ff:              'Kreon Light', serif;
+$form-fz:              1.25em;
+$form-fw:              400;
+$form-lh:              1;
+
+/********************
+  Colors
+********************/
+
+$color-primary:        #B3008C;
+$color-primary-dark:   #73005A;
+$color-secondary:      #59FFDE;
+$color-secondary-dark: #4BD8BC;
+$color-black:          #2C2C2C;
+$color-white:          #FFFFFF;
+
+/********************
+  Spacing
+********************/
+
+$spacing-unit:         2.1875rem; // 35px
+
+/********************
+  Mixins
+********************/
+
+// Prefixer:
+$prefixes:             webkit, moz, o;
+
+@mixin prefix($property, $value) {
+  @each $prefix in $prefixes {
+    @if $property == 'display' {
+      #{$property}: #{'-' + $prefix + '-' + $value};
+    } @else {
+      #{'-' + $prefix + '-' + $property}: $value;
+    }
+  }
+  #{$property}: $value;
+}
