@@ -53,7 +53,8 @@ app.post('/trip', function (req, res) {
     admins: [
       {
         id: req.body.socketId,
-        username: req.body.username
+        username: req.body.username,
+        admin: true
       }
     ]
   };
@@ -62,7 +63,15 @@ app.post('/trip', function (req, res) {
   res.redirect('/trip/' + trip.id);
 });
 
+
+
+
+// Users is still global, instead of per namespace (!)
 var users = [];
+
+
+
+
 
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
@@ -85,10 +94,18 @@ app.get('/trip/:id', function (req, res) {
     socket.emit('show login');
     io.of(namespace).to('admin').emit('hide login');
 
+    // Show to socket who is active:
+    users.forEach(user => {
+      socket.emit('add user', user);
+    });
+
     // Add client's username to users list:
     socket.on('post user', (client) => {
       client.id = socket.handshake.session.id;
+      client.admin = false;
       users.push(client);
+
+      io.of(namespace).emit('add user', client);
     });
 
     if (admin) {
@@ -100,7 +117,10 @@ app.get('/trip/:id', function (req, res) {
     socket.on('disconnect', () => {
       // Remove user from users list:
       var curUser = users.find(user => user.id == socket.handshake.session.id);
-      users.splice(users.indexOf(curUser), 1);
+      if (curUser) {
+        users.splice(users.indexOf(curUser), 1);
+        io.of(namespace).emit('user left', curUser);
+      }
     });
   });
 
