@@ -1,6 +1,7 @@
 import socket from './components/socket.js';
 import tripLogin from './components/tripLogin.js';
 import activeUsers from './components/activeUsers.js';
+import map from './components/map.js';
 
 (function () {
   const app = {
@@ -8,6 +9,7 @@ import activeUsers from './components/activeUsers.js';
       socket.init();
       tripLogin.init(socket.namespace);
       activeUsers.init(socket.namespace);
+      map.initMap();
     }
   };
 
