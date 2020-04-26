@@ -28,6 +28,9 @@ var database = {
   trips: []
 };
 
+// Create a users list for all active users:
+var users = [];
+
 io.use(sharedsession(session, { autoSave: true }));
 
 app.get('/', function (req, res) {
@@ -63,16 +66,6 @@ app.post('/trip', function (req, res) {
   res.redirect('/trip/' + trip.id);
 });
 
-
-
-
-// Users is still global, instead of per namespace (!)
-var users = [];
-
-
-
-
-
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
   var url = req.protocol + '://' + req.get('host') + req.originalUrl;
@@ -83,26 +76,29 @@ app.get('/trip/:id', function (req, res) {
     // Update the trip's expiration date by an hour:
     trip.expiration += (60 * 60 * 1000);
 
+    // Show to socket who is active:
+    users.forEach(user => {
+      if (user.namespace == namespace) socket.emit('add user', user);
+    });
+
     // Determine if socket is admin, if so, give admin rights and add admin to users list:
     var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
     if (admin) {
       socket.join('admin');
+      admin.namespace = namespace;
       users.push(admin);
+      io.of(namespace).emit('add user', admin);
     }
 
     // Show login modal to each client that isn't an admin:
     socket.emit('show login');
     io.of(namespace).to('admin').emit('hide login');
 
-    // Show to socket who is active:
-    users.forEach(user => {
-      socket.emit('add user', user);
-    });
-
     // Add client's username to users list:
     socket.on('post user', (client) => {
       client.id = socket.handshake.session.id;
       client.admin = false;
+      client.namespace = namespace;
       users.push(client);
 
       io.of(namespace).emit('add user', client);
@@ -117,7 +113,7 @@ app.get('/trip/:id', function (req, res) {
     socket.on('disconnect', () => {
       // Remove user from users list:
       var curUser = users.find(user => user.id == socket.handshake.session.id);
-      if (curUser) {
+      if (curUser && curUser.namespace == namespace) {
         users.splice(users.indexOf(curUser), 1);
         io.of(namespace).emit('user left', curUser);
       }
