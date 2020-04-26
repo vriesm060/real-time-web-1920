@@ -1,11 +1,11 @@
 import socket from './components/socket.js';
-import travelInput from './components/travelInput.js';
+import tripLogin from './components/tripLogin.js';
 
 (function () {
   const app = {
     init: function () {
       socket.init();
-      travelInput.init(socket.main);
+      tripLogin.init(socket.namespace);
     }
   };
 
