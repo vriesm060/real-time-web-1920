@@ -62,11 +62,12 @@ app.post('/trip', function (req, res) {
   res.redirect('/trip/' + trip.id);
 });
 
+var users = [];
+
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
   var url = req.protocol + '://' + req.get('host') + req.originalUrl;
   var trip = database.trips.find(trip => trip.id == req.params.id);
-  var users = [];
 
   io.of(namespace).use(sharedsession(session, { autoSave: true }));
   io.of(namespace).once('connection', (socket) => {
@@ -84,11 +85,23 @@ app.get('/trip/:id', function (req, res) {
     socket.emit('show login');
     io.of(namespace).to('admin').emit('hide login');
 
+    // Add client's username to users list:
+    socket.on('post user', (client) => {
+      client.id = socket.handshake.session.id;
+      users.push(client);
+    });
+
     if (admin) {
       console.log('Welcome ' + admin.username);
     } else {
       console.log('Welcome random user');
     }
+
+    socket.on('disconnect', () => {
+      // Remove user from users list:
+      var curUser = users.find(user => user.id == socket.handshake.session.id);
+      users.splice(users.indexOf(curUser), 1);
+    });
   });
 
   res.render('trip', {
