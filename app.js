@@ -73,17 +73,22 @@ app.get('/trip/:id', function (req, res) {
     // Update the trip's expiration date by an hour:
     trip.expiration += (60 * 60 * 1000);
 
-    // Determine if socket is admin, if so, give admin rights:
+    // Determine if socket is admin, if so, give admin rights and add admin to users list:
     var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
+    if (admin) {
+      socket.join('admin');
+      users.push(admin);
+    }
 
-    if (admin) socket.join('admin');
+    // Show login modal to each client that isn't an admin:
+    socket.emit('show login');
+    io.of(namespace).to('admin').emit('hide login');
 
     if (admin) {
       console.log('Welcome ' + admin.username);
     } else {
       console.log('Welcome random user');
     }
-
   });
 
   res.render('trip', {
