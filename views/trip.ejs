@@ -2,35 +2,35 @@
 <html lang="nl">
   <%- include('partials/head') %>
   <body>
-    <main>
-      <div id="map"></div>
+    <div id="map"></div>
 
+    <aside class="options">
       <h1 class="title"><%= title %></h1>
-
-      <div class="share-link">
-        <input type="text" name="url" value="<%- url %>">
-        <button type="button">Copy</button>
-      </div>
-
-      <aside class="active-users">
-        <h2>Actieve gebruikers:</h2>
+      <h2><strong><%= location %></strong></h2>
+      <section class="active-users">
+        <h2>Reizigers:</h2>
         <ul class="active-users__list"></ul>
-      </aside>
+      </section>
+    </aside>
 
-      <div class="login-overlay">
-        <div class="login-modal">
-          <h2>Welkom bij</h2>
-          <h1><q><%= title %></q></h1>
-          <p>
-            Vul je naam in en treed binnen!
-          </p>
-          <form class="login">
-            <input type="text" name="username" placeholder="Jouw naam" required>
-            <button type="submit">Naar binnen</button>
-          </form>
-        </div>
+    <div class="share-link">
+      <input type="text" name="url" value="<%- url %>" disabled>
+      <button type="button">Deel</button>
+    </div>
+
+    <div class="login-overlay">
+      <div class="login-modal">
+        <h2>Welkom bij</h2>
+        <h1><q><%= title %></q></h1>
+        <p>
+          Vul je naam in en treed binnen!
+        </p>
+        <form class="login">
+          <input type="text" name="username" placeholder="Jouw naam" required>
+          <button type="submit">Naar binnen</button>
+        </form>
       </div>
-    </main>
+    </div>
 
     <script type="module" src="/js/trip.js"></script>
 

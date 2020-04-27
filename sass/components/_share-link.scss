@@ -1,0 +1,47 @@
+/********************
+  Share link
+********************/
+
+.share-link {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  @include prefix(display, flex);
+  @include prefix(flex-wrap, nowrap);
+  width: 100%;
+  max-width: 32rem;
+  height: #{2 * $spacing-unit};
+  margin: $spacing-unit 1.25rem;
+  border-radius: .625rem;
+  box-shadow: 0 0 0 .625rem rgba(44,44,44,.2);
+
+  & > input[name='url'] {
+    @include prefix(flex, 1 0 auto);
+    display: block;
+    height: 100%;
+    padding: .84375rem;
+    border: 0;
+    border-radius: .625rem 0 0 .625rem;
+    background-color: $color-white;
+  }
+
+  & > button {
+    @include prefix(flex, 0 0 auto);
+    display: block;
+    height: 100%;
+    padding: 1.25rem;
+    border: 0;
+    border-radius: 0 .625rem .625rem 0;
+    font-family: $heading-ff;
+    color: $color-primary;
+    background-color: $color-secondary;
+    cursor: pointer;
+    @include prefix(transition, all .3s ease);
+
+    &:hover,
+    &:focus {
+      color: $color-secondary;
+      background-color: $color-primary-dark;
+    }
+  }
+}

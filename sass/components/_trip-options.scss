@@ -1,21 +1,47 @@
 /********************
+  Trip options
+********************/
+
+.options {
+  position: fixed;
+  left: 0;
+  top: $spacing-unit;
+  display: block;
+  width: 20rem;
+  max-height: calc(100vh - #{6 * $spacing-unit});
+  padding: .84375rem;
+  margin: $spacing-unit 0;
+  border-radius: 0 .625rem .625rem 0;
+  background-color: $color-primary-dark;
+  box-shadow: 0 0 0 .625rem rgba(44,44,44,.2);
+
+  & .title {
+    display: block;
+    margin: .84375rem;
+    margin-bottom: 0;
+    font-size: 2em;
+    text-align: left;
+  }
+
+  & h2 {
+    display: block;
+    margin: 0 .84375rem;
+    margin-bottom: #{.5 * $spacing-unit};
+    font-size: 1.25em;
+
+    & > strong {
+      color: $color-secondary-dark;
+    }
+  }
+}
+
+/********************
   Active users
 ********************/
 
 .active-users {
-  position: fixed;
-  right: 0;
-  top: 0;
   display: block;
   overflow-y: scroll;
-  max-width: 25rem;
-  max-height: 100vh;
-
-  & > h2 {
-    display: block;
-    margin: #{.5 * $spacing-unit};
-    font-size: 1.25em;
-  }
 
   &__list {
     display: block;
@@ -28,7 +54,7 @@
   @include prefix(display, flex);
   @include prefix(flex-wrap, nowrap);
   @include prefix(align-items, center);
-  margin: #{.5 * $spacing-unit};
+  margin: .84375rem;
   color: $color-secondary;
   text-decoration: none;
   @include prefix(transform, translateX(25rem));
@@ -71,7 +97,7 @@
         width: 1.25rem;
         height: 1.25rem;
         border-radius: 50%;
-        background-color: $color-primary-dark;
+        background-color: $color-secondary-dark;
         background-image: url(../images/icons/admin.svg);
         background-repeat: no-repeat;
         background-position: 50% 40%;

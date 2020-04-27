@@ -68,7 +68,7 @@ app.post('/trip', function (req, res) {
 
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
-  var url = req.protocol + '://' + req.get('host') + req.originalUrl;
+  var url = req.get('host') + req.originalUrl;
   var trip = database.trips.find(trip => trip.id == req.params.id);
 
   io.of(namespace).use(sharedsession(session, { autoSave: true }));
@@ -122,6 +122,7 @@ app.get('/trip/:id', function (req, res) {
 
   res.render('trip', {
     title: trip.name.literal,
+    location: trip.location.literal,
     url: url
   });
 });

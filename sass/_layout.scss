@@ -14,7 +14,7 @@
 
 body {
   color: $color-secondary;
-  background-color: $color-primary;
+  background-color: $color-primary-dark;
   font-family: $base-ff;
   font-size: $base-fz;
   font-weight: $base-fw;
@@ -42,56 +42,4 @@ button {
   display: block;
   margin: $spacing-unit;
   text-align: center;
-}
-
-/********************
-  Share link
-********************/
-
-.share-link {
-  @include prefix(display, flex);
-  @include prefix(flex-wrap, nowrap);
-  width: 100%;
-  max-width: calc(35rem - #{2 * $spacing-unit});
-  height: #{2 * $spacing-unit};
-  margin: 0 auto;
-
-  & > input[name='url'] {
-    @include prefix(flex, 1 0 auto);
-    display: block;
-    height: 100%;
-    padding: 1.25rem;
-    border: 0;
-    border-radius: .625rem 0 0 .625rem;
-    background-color: $color-white;
-  }
-
-  & > button {
-    @include prefix(flex, 0 0 auto);
-    display: block;
-    height: 100%;
-    padding: 1.25rem;
-    border: 0;
-    border-radius: 0 .625rem .625rem 0;
-    font-family: $heading-ff;
-    color: $color-primary;
-    background-color: $color-secondary;
-    cursor: pointer;
-    @include prefix(transition, all .3s ease);
-
-    &:hover,
-    &:focus {
-      color: $color-secondary;
-      background-color: $color-primary-dark;
-    }
-  }
-}
-
-/********************
-  Map
-********************/
-
-#map {
-  width: 100%;
-  height: 100vh;
 }
