@@ -29,10 +29,11 @@ $color-black:          #2C2C2C;
 $color-white:          #FFFFFF;
 
 /********************
-  Spacing
+  Other
 ********************/
 
 $spacing-unit:         2.1875rem; // 35px
+$cubic-bezier:         cubic-bezier(.68, -.55, .265, 1.55);
 
 /********************
   Mixins
