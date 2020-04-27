@@ -292,6 +292,40 @@ button {
   height: 100vh; }
 
 /********************
+  Cursors
+********************/
+.cursors {
+  position: fixed;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  -webkit-pointer-events: none;
+  -moz-pointer-events: none;
+  -o-pointer-events: none;
+  pointer-events: none; }
+  .cursors .cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    width: 1.875rem;
+    height: 1.875rem;
+    padding: .5625rem;
+    border-radius: 50%;
+    color: #73005A;
+    background-color: #59FFDE;
+    font-size: .75em;
+    text-align: center;
+    text-transform: capitalize;
+    line-height: .7;
+    -webkit-transform: translate(0, 0);
+    -moz-transform: translate(0, 0);
+    -o-transform: translate(0, 0);
+    transform: translate(0, 0); }
+
+/********************
   Login
 ********************/
 .login-overlay {
