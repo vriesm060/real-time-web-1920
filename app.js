@@ -115,10 +115,10 @@ app.get('/trip/:id', function (req, res) {
     }
 
     // Show other client's cursor in real-time:
-    socket.on('cursor', (cursorPosition) => {
+    socket.on('cursor', (latlng) => {
       socket.broadcast.emit('change cursor', {
         id: socket.handshake.session.id,
-        position: cursorPosition
+        latlng: latlng
       });
     });
 

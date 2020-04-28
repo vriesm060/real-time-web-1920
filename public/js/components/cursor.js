@@ -11,9 +11,9 @@ export default {
     var curCursor = Array.from(this.elem.children).find(child => child.classList.contains(user.id));
     curCursor.parentNode.removeChild(curCursor);
   },
-  changeCursorPosition: function (cursor) {
-    var curCursor = Array.from(this.elem.children).find(child => child.classList.contains(cursor.id));
-    if (curCursor) curCursor.style.transform = 'translate(' + cursor.position.x + 'vw,' + cursor.position.y + 'vh)';
+  changeCursorPosition: function (id, point) {
+    var curCursor = Array.from(this.elem.children).find(child => child.classList.contains(id));
+    if (curCursor) curCursor.style.transform = 'translate(' + point.x + 'px,' + point.y + 'px)';
   },
   init: function (namespace) {
     namespace
@@ -22,16 +22,6 @@ export default {
       })
       .on('remove cursor', (user) => {
         this.removeCursor(user);
-      })
-      .on('change cursor', (cursor) => {
-        this.changeCursorPosition(cursor);
       });
-
-    document.addEventListener('mousemove', (e) => {
-      namespace.emit('cursor', {
-        x: (e.clientX / document.body.offsetWidth) * 100,
-        y: (e.clientY / document.body.offsetHeight) * 100
-      });
-    });
   }
 };

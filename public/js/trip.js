@@ -13,7 +13,7 @@ import map from './components/map.js';
       activeUsers.init(socket.namespace);
       shareLink.init();
       cursor.init(socket.namespace);
-      map.initMap();
+      map.initMap(socket.namespace);
     }
   };
 

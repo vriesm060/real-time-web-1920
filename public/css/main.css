@@ -118,6 +118,7 @@ button {
 ********************/
 .options {
   position: fixed;
+  z-index: 2;
   left: 0;
   top: 2.1875rem;
   display: block;
@@ -235,6 +236,7 @@ button {
 ********************/
 .share-link {
   position: fixed;
+  z-index: 2;
   left: 0;
   bottom: 0;
   display: -webkit-flex;
@@ -296,7 +298,6 @@ button {
 ********************/
 .cursors {
   position: fixed;
-  z-index: 2;
   left: 0;
   top: 0;
   right: 0;
