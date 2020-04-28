@@ -2,54 +2,55 @@ import cursor from './cursor.js';
 
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
-  polylines: [],
-  placeIdArray: [],
-  snappedCoordinates: [],
-  runSnapToRoad: function (path) {
-    var pathValues = [];
-    for (var i = 0; i < path.getLength(); i++) {
-      pathValues.push(path.getAt(i).toUrlValue());
-    }
-
-    var url = 'https://roads.googleapis.com/v1/snapToRoads?path='
-      + pathValues.join('|')
-      + '&interpolate=true&key='
-      + this['PUBLIC_KEY'];
-
-    fetch (url)
-      .then(res => res.json())
-      .then(data => {
-        this.processSnapToRoadResponse(data);
-        this.drawSnappedPolyline();
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  },
-  processSnapToRoadResponse: function (data) {
-    this.snappedCoordinates = [];
-    this.placeIdArray = [];
-    for (var i = 0; i < data.snappedPoints.length; i++) {
-      var latlng = new google.maps.LatLng(
-        data.snappedPoints[i].location.latitude,
-        data.snappedPoints[i].location.longitude
-      );
-      this.snappedCoordinates.push(latlng);
-      this.placeIdArray.push(data.snappedPoints[i].placeId);
-    }
-  },
-  drawSnappedPolyline: function () {
-    var snappedPolyline = new google.maps.Polyline({
-      path: this.snappedCoordinates,
-      strokeColor: '#B3008C',
-      strokeWeight: 8,
-      strokeOpacity: 1
-    });
-
-    snappedPolyline.setMap(this.map);
-    this.polylines.pop();
-    this.polylines.push(snappedPolyline);
-  },
+  // polylines: [],
+  // placeIdArray: [],
+  // snappedCoordinates: [],
+  // runSnapToRoad: function (path) {
+  //   var pathValues = [];
+  //   for (var i = 0; i < path.getLength(); i++) {
+  //     pathValues.push(path.getAt(i).toUrlValue());
+  //   }
+  //
+  //   var url = 'https://roads.googleapis.com/v1/snapToRoads?path='
+  //     + pathValues.join('|')
+  //     + '&interpolate=true&key='
+  //     + this['PUBLIC_KEY'];
+  //
+  //   fetch (url)
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       this.processSnapToRoadResponse(data);
+  //       this.drawSnappedPolyline();
+  //     })
+  //     .catch(err => {
+  //       console.log(err);
+  //     });
+  // },
+  // processSnapToRoadResponse: function (data) {
+  //   this.snappedCoordinates = [];
+  //   this.placeIdArray = [];
+  //   for (var i = 0; i < data.snappedPoints.length; i++) {
+  //     var latlng = new google.maps.LatLng(
+  //       data.snappedPoints[i].location.latitude,
+  //       data.snappedPoints[i].location.longitude
+  //     );
+  //     this.snappedCoordinates.push(latlng);
+  //     this.placeIdArray.push(data.snappedPoints[i].placeId);
+  //   }
+  // },
+  // drawSnappedPolyline: function () {
+  //   var snappedPolyline = new google.maps.Polyline({
+  //     path: this.snappedCoordinates,
+  //     strokeColor: '#B3008C',
+  //     strokeWeight: 8,
+  //     strokeOpacity: 1
+  //   });
+  //
+  //   snappedPolyline.setMap(this.map);
+  //   this.polylines.pop();
+  //   this.polylines.push(snappedPolyline);
+  // },
+  path: [],
   initMap: function (namespace) {
     // Create the script tag:
     var self = this;
@@ -117,14 +118,26 @@ export default {
 
       // Select the start position of the trip:
       google.maps.event.addListener(self.map, 'click', (e) => {
+        self.path.push(e.latLng);
+
         if (!self.startMarker) {
           self.startMarker = new google.maps.Marker({
             position: e.latLng,
             map: self.map,
             icon: {
               url: '/images/icons/start_point.svg',
-              scaledSize: new google.maps.Size(60,60)
+              scaledSize: new google.maps.Size(60,60),
+              anchor: new google.maps.Point(30,55)
             }
+          });
+        } else {
+          var polyline = new google.maps.Polyline({
+            path: self.path.slice(self.path.length-2),
+            geodesic: true,
+            strokeColor: '#B3008C',
+            strokeOpacity: 1,
+            strokeWeight: 8,
+            map: self.map
           });
         }
       });
