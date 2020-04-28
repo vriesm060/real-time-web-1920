@@ -90,7 +90,7 @@ export default {
         var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
         var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
 
-        namespace.emit('cursor', latlng);
+        namespace.emit('cursor move', latlng);
       });
 
       // Calculate point on screen from latLng:
@@ -104,6 +104,16 @@ export default {
 
           cursor.changeCursorPosition(client.id, point);
         });
+
+      // Broadcast when a client clicks on the map:
+      google.maps.event.addDomListener(map, 'mousedown', (e) => {
+        namespace.emit('cursor click', true);
+      });
+
+      // Broadcast when a client releases the click on the map:
+      google.maps.event.addDomListener(map, 'mouseup', (e) => {
+        namespace.emit('cursor click', false);
+      });
 
       // Draw polyline manager:
       self.drawingManager = new google.maps.drawing.DrawingManager({

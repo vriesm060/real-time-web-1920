@@ -321,10 +321,25 @@ button {
     text-align: center;
     text-transform: capitalize;
     line-height: .7;
+    box-shadow: 0 0 0 0 rgba(44, 44, 44, 0.2);
     -webkit-transform: translate(0, 0);
     -moz-transform: translate(0, 0);
     -o-transform: translate(0, 0);
-    transform: translate(0, 0); }
+    transform: translate(0, 0);
+    -webkit-transition: box-shadow 0.1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    -moz-transition: box-shadow 0.1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    -o-transition: box-shadow 0.1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: box-shadow 0.1s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+    .cursors .cursor::before {
+      position: absolute;
+      left: -.5rem;
+      top: -1rem;
+      display: block;
+      color: #73005A;
+      font-size: 2rem;
+      text-align: center;
+      line-height: 1;
+      content: '+'; }
 
 /********************
   Login

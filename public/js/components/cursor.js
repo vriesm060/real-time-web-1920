@@ -15,6 +15,11 @@ export default {
     var curCursor = Array.from(this.elem.children).find(child => child.classList.contains(id));
     if (curCursor) curCursor.style.transform = 'translate(' + point.x + 'px,' + point.y + 'px)';
   },
+  pulseCursor: function (id, down) {
+    var curCursor = Array.from(this.elem.children).find(child => child.classList.contains(id));
+    var size = down ? .5 : 0;
+    curCursor.style.boxShadow = '0 0 0 ' + size + 'rem rgba(44,44,44,.2)';
+  },
   init: function (namespace) {
     namespace
       .on('add cursor', (user) => {
@@ -22,6 +27,9 @@ export default {
       })
       .on('remove cursor', (user) => {
         this.removeCursor(user);
+      })
+      .on('pulse cursor', (cursor) => {
+        this.pulseCursor(cursor.id, cursor.down);
       });
   }
 };
