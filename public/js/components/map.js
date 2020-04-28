@@ -2,55 +2,60 @@ import cursor from './cursor.js';
 
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
-  // polylines: [],
-  // placeIdArray: [],
-  // snappedCoordinates: [],
-  // runSnapToRoad: function (path) {
-  //   var pathValues = [];
-  //   for (var i = 0; i < path.getLength(); i++) {
-  //     pathValues.push(path.getAt(i).toUrlValue());
-  //   }
-  //
-  //   var url = 'https://roads.googleapis.com/v1/snapToRoads?path='
-  //     + pathValues.join('|')
-  //     + '&interpolate=true&key='
-  //     + this['PUBLIC_KEY'];
-  //
-  //   fetch (url)
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       this.processSnapToRoadResponse(data);
-  //       this.drawSnappedPolyline();
-  //     })
-  //     .catch(err => {
-  //       console.log(err);
-  //     });
-  // },
-  // processSnapToRoadResponse: function (data) {
-  //   this.snappedCoordinates = [];
-  //   this.placeIdArray = [];
-  //   for (var i = 0; i < data.snappedPoints.length; i++) {
-  //     var latlng = new google.maps.LatLng(
-  //       data.snappedPoints[i].location.latitude,
-  //       data.snappedPoints[i].location.longitude
-  //     );
-  //     this.snappedCoordinates.push(latlng);
-  //     this.placeIdArray.push(data.snappedPoints[i].placeId);
-  //   }
-  // },
-  // drawSnappedPolyline: function () {
-  //   var snappedPolyline = new google.maps.Polyline({
-  //     path: this.snappedCoordinates,
-  //     strokeColor: '#B3008C',
-  //     strokeWeight: 8,
-  //     strokeOpacity: 1
-  //   });
-  //
-  //   snappedPolyline.setMap(this.map);
-  //   this.polylines.pop();
-  //   this.polylines.push(snappedPolyline);
-  // },
+  startBtn: document.querySelector('.start-btn'),
   path: [],
+  polylines: [],
+  snappedCoordinates: [],
+  runSnapToRoad: function (path) {
+    var pathValues = [];
+    for (var i = 0; i < path.length; i++) {
+      pathValues.push(path[i].toUrlValue());
+    }
+
+    var url = 'https://roads.googleapis.com/v1/snapToRoads?path='
+      + pathValues.join('|')
+      + '&interpolate=true&key='
+      + this['PUBLIC_KEY'];
+
+    fetch (url)
+      .then(res => res.json())
+      .then(data => {
+        this.processSnapToRoadResponse(data);
+        this.drawSnappedPolyline();
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  },
+  processSnapToRoadResponse: function (data) {
+    this.snappedCoordinates = [];
+    for (var i = 0; i < data.snappedPoints.length; i++) {
+      var latlng = new google.maps.LatLng(
+        data.snappedPoints[i].location.latitude,
+        data.snappedPoints[i].location.longitude
+      );
+      this.snappedCoordinates.push(latlng);
+    }
+
+    // Add finish marker:
+    this.finishMarker = new google.maps.Marker({
+      position: this.snappedCoordinates[this.snappedCoordinates.length-1],
+      map: this.map,
+      icon: {
+        url: '/images/icons/finish_point.svg',
+        scaledSize: new google.maps.Size(60,60)
+      }
+    });
+  },
+  drawSnappedPolyline: function () {
+    var snappedPolyline = new google.maps.Polyline({
+      path: this.snappedCoordinates,
+      strokeColor: '#B3008C',
+      strokeOpacity: 1,
+      strokeWeight: 8,
+      map: this.map
+    });
+  },
   initMap: function (namespace) {
     // Create the script tag:
     var self = this;
@@ -130,7 +135,7 @@ export default {
               anchor: new google.maps.Point(30,55)
             }
           });
-        } else {
+        } else if (!self.finishMarker) {
           var polyline = new google.maps.Polyline({
             path: self.path.slice(self.path.length-2),
             geodesic: true,
@@ -139,35 +144,20 @@ export default {
             strokeWeight: 8,
             map: self.map
           });
+          self.polylines.push(polyline);
         }
       });
 
-      // Draw polyline manager:
-      // self.drawingManager = new google.maps.drawing.DrawingManager({
-      //   drawingMode: google.maps.drawing.OverlayType.POLYLINE,
-      //   drawingControl: true,
-      //   drawingControlOptions: {
-      //     position: google.maps.ControlPosition.TOP_CENTER,
-      //     drawingModes: [
-      //       google.maps.drawing.OverlayType.POLYLINE
-      //     ]
-      //   },
-      //   polylineOptions: {
-      //     strokeColor: '#B3008C',
-      //     strokeWeight: 6,
-      //     strokeOpacity: .3
-      //   }
-      // });
-      // self.drawingManager.setMap(self.map);
-      //
-      // // Snap-to-road after drawing polyline:
-      // self.drawingManager.addListener('polylinecomplete', (poly) => {
-      //   var path = poly.getPath();
-      //   self.polylines.push(poly);
-      //   self.placeIdArray = [];
-      //   self.runSnapToRoad(path);
-      //   poly.setMap(null);
-      // });
+      // Run snapToRoads when clicking start:
+      google.maps.event.addDomListener(self.startBtn, 'click', (e) => {
+        // Run snapToRoads:
+        if (self.path.length > 1) self.runSnapToRoad(self.path);
+
+        // Remove old polylines:
+        self.polylines.forEach(polyline => polyline.setMap(null));
+
+        e.preventDefault();
+      });
     }
     document.head.appendChild(script);
   }
