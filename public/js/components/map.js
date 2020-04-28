@@ -1,3 +1,5 @@
+import cursor from './cursor.js';
+
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
   polylines: [],
@@ -48,7 +50,8 @@ export default {
     this.polylines.pop();
     this.polylines.push(snappedPolyline);
   },
-  initMap: function () {
+  initMap: function (namespace) {
+    // Create the script tag:
     var self = this;
     var script = document.createElement('script');
     script.src = 'https://maps.googleapis.com/maps/api/js?key=' + this['PUBLIC_KEY'] + '&callback=initMap&libraries=drawing';
@@ -56,9 +59,60 @@ export default {
     script.async = true;
 
     window.initMap = function () {
-      self.map = new google.maps.Map(document.getElementById('map'), {
+      var map = document.getElementById('map');
+      var bounds;
+      var scale = Math.pow(2, 17);
+
+      // Init the map:
+      self.map = new google.maps.Map(map, {
         center: { lat: 52.369270, lng: 4.909590 },
         zoom: 17
+      });
+
+      // Change map bounds:
+      google.maps.event.addListener(self.map, 'bounds_changed', (e) => {
+        var getBounds = self.map.getBounds();
+        bounds = {
+          ne: getBounds.getNorthEast(),
+          sw: getBounds.getSouthWest()
+        };
+      });
+
+      // Change map zoom:
+      google.maps.event.addListener(self.map, 'zoom_changed', (e) => {
+        scale = Math.pow(2, self.map.getZoom());
+      });
+
+      // Calculate latLng from point on screen:
+      google.maps.event.addDomListener(map, 'mousemove', (e) => {
+        var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
+        var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
+        var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
+        var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
+
+        namespace.emit('cursor move', latlng);
+      });
+
+      // Calculate point on screen from latLng:
+      namespace
+        .on('change cursor', (client) => {
+          var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
+          var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
+          var latlng = new google.maps.LatLng(client.latlng);
+          var worldPoint = self.map.getProjection().fromLatLngToPoint(latlng);
+          var point = new google.maps.Point((worldPoint.x - swBoundInPx.x) * scale, (worldPoint.y - neBoundInPx.y) * scale);
+
+          cursor.changeCursorPosition(client.id, point);
+        });
+
+      // Broadcast when a client clicks on the map:
+      google.maps.event.addDomListener(map, 'mousedown', (e) => {
+        namespace.emit('cursor click', true);
+      });
+
+      // Broadcast when a client releases the click on the map:
+      google.maps.event.addDomListener(map, 'mouseup', (e) => {
+        namespace.emit('cursor click', false);
       });
 
       // Draw polyline manager:

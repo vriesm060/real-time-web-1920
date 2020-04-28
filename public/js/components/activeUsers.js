@@ -7,7 +7,7 @@ export default {
     var initial = document.createElement('span');
     var fullname = initial.cloneNode(true);
 
-    li.id = user.id;
+    li.classList.add(user.id);
     fragment.appendChild(li);
 
     a.classList.add('user');
@@ -25,7 +25,7 @@ export default {
     this.list.appendChild(fragment);
   },
   removeUser: function (user) {
-    var curUser = Array.from(this.list.children).find(child => child.id == user.id);
+    var curUser = Array.from(this.list.children).find(child => child.classList.contains(user.id));
     curUser.parentNode.removeChild(curUser);
   },
   init: function (namespace) {
@@ -35,6 +35,6 @@ export default {
       })
       .on('user left', (user) => {
         this.removeUser(user);
-      })
+      });
   }
 };

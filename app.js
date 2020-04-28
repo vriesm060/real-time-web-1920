@@ -78,7 +78,10 @@ app.get('/trip/:id', function (req, res) {
 
     // Show to socket who is active:
     users.forEach(user => {
-      if (user.namespace == namespace) socket.emit('add user', user);
+      if (user.namespace == namespace) {
+        socket.emit('add user', user);
+        socket.emit('add cursor', user);
+      }
     });
 
     // Determine if socket is admin, if so, give admin rights and add admin to users list:
@@ -88,6 +91,7 @@ app.get('/trip/:id', function (req, res) {
       admin.namespace = namespace;
       users.push(admin);
       io.of(namespace).emit('add user', admin);
+      socket.broadcast.emit('add cursor', admin);
     }
 
     // Show login modal to each client that isn't an admin:
@@ -100,8 +104,8 @@ app.get('/trip/:id', function (req, res) {
       client.admin = false;
       client.namespace = namespace;
       users.push(client);
-
       io.of(namespace).emit('add user', client);
+      socket.broadcast.emit('add cursor', client);
     });
 
     if (admin) {
@@ -110,12 +114,29 @@ app.get('/trip/:id', function (req, res) {
       console.log('Welcome random user');
     }
 
+    // Show other client's cursor in real-time:
+    socket.on('cursor move', (latlng) => {
+      socket.broadcast.emit('change cursor', {
+        id: socket.handshake.session.id,
+        latlng: latlng
+      });
+    });
+
+    // Show other client's cursor clicked in real-time:
+    socket.on('cursor click', (down) => {
+      socket.broadcast.emit('pulse cursor', {
+        id: socket.handshake.session.id,
+        down: down
+      });
+    });
+
     socket.on('disconnect', () => {
       // Remove user from users list:
       var curUser = users.find(user => user.id == socket.handshake.session.id);
       if (curUser && curUser.namespace == namespace) {
         users.splice(users.indexOf(curUser), 1);
         io.of(namespace).emit('user left', curUser);
+        socket.broadcast.emit('remove cursor', curUser);
       }
     });
   });
