@@ -115,32 +115,46 @@ export default {
         namespace.emit('cursor click', false);
       });
 
-      // Draw polyline manager:
-      self.drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: google.maps.drawing.OverlayType.POLYLINE,
-        drawingControl: true,
-        drawingControlOptions: {
-          position: google.maps.ControlPosition.TOP_CENTER,
-          drawingModes: [
-            google.maps.drawing.OverlayType.POLYLINE
-          ]
-        },
-        polylineOptions: {
-          strokeColor: '#B3008C',
-          strokeWeight: 6,
-          strokeOpacity: .3
+      // Select the start position of the trip:
+      google.maps.event.addListener(self.map, 'click', (e) => {
+        if (!self.startMarker) {
+          self.startMarker = new google.maps.Marker({
+            position: e.latLng,
+            map: self.map,
+            icon: {
+              url: '/images/icons/start_point.svg',
+              scaledSize: new google.maps.Size(60,60)
+            }
+          });
         }
       });
-      self.drawingManager.setMap(self.map);
 
-      // Snap-to-road after drawing polyline:
-      self.drawingManager.addListener('polylinecomplete', (poly) => {
-        var path = poly.getPath();
-        self.polylines.push(poly);
-        self.placeIdArray = [];
-        self.runSnapToRoad(path);
-        poly.setMap(null);
-      });
+      // Draw polyline manager:
+      // self.drawingManager = new google.maps.drawing.DrawingManager({
+      //   drawingMode: google.maps.drawing.OverlayType.POLYLINE,
+      //   drawingControl: true,
+      //   drawingControlOptions: {
+      //     position: google.maps.ControlPosition.TOP_CENTER,
+      //     drawingModes: [
+      //       google.maps.drawing.OverlayType.POLYLINE
+      //     ]
+      //   },
+      //   polylineOptions: {
+      //     strokeColor: '#B3008C',
+      //     strokeWeight: 6,
+      //     strokeOpacity: .3
+      //   }
+      // });
+      // self.drawingManager.setMap(self.map);
+      //
+      // // Snap-to-road after drawing polyline:
+      // self.drawingManager.addListener('polylinecomplete', (poly) => {
+      //   var path = poly.getPath();
+      //   self.polylines.push(poly);
+      //   self.placeIdArray = [];
+      //   self.runSnapToRoad(path);
+      //   poly.setMap(null);
+      // });
     }
     document.head.appendChild(script);
   }
