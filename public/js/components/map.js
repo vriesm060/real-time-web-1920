@@ -121,10 +121,15 @@ export default {
         namespace.emit('cursor click', false);
       });
 
-      // Select the start position of the trip:
+      // Build the route when clicking on the map:
       google.maps.event.addListener(self.map, 'click', (e) => {
+
+        // namespace.emit('edit route', e.latLng);
+
+        // Push the latest coords of the route in the path array:
         self.path.push(e.latLng);
 
+        // Select the start position of the trip on first click or add a polyline to the route:
         if (!self.startMarker) {
           self.startMarker = new google.maps.Marker({
             position: e.latLng,
@@ -138,13 +143,41 @@ export default {
         } else if (!self.finishMarker) {
           var polyline = new google.maps.Polyline({
             path: self.path.slice(self.path.length-2),
+            map: self.map,
             geodesic: true,
+            editable: true,
             strokeColor: '#B3008C',
             strokeOpacity: 1,
-            strokeWeight: 8,
-            map: self.map
+            strokeWeight: 8
           });
           self.polylines.push(polyline);
+
+          var polylineIdx, idx;
+
+          // Define the indices:
+          google.maps.event.addListener(polyline, 'mousedown', (e) => {
+            if (polyline.getPath().i.indexOf(e.latLng) !== -1) {
+              polylineIdx = polyline.getPath().i.indexOf(e.latLng);
+              idx = self.path.indexOf(e.latLng);
+            } else {
+              polylineIdx = e.edge + 1;
+              idx = self.path.indexOf(polyline.getPath().i[polylineIdx]);
+            }
+          });
+
+          // Update the path array with new latLng coords if a polyline has an edit:
+          google.maps.event.addListener(polyline, 'mouseup', (e) => {
+            if (e.vertex >= 0) {
+              self.path.splice(idx, 1, polyline.getPath().i[polylineIdx]);
+            } else {
+              self.path.splice(idx, 0, polyline.getPath().i[polylineIdx]);
+            }
+          });
+
+          // When client clicks the undo button after altering the polyline, coords won't be updated again (!)
+          // Either remove this option or work out the problem
+
+          // Option to delete polyline:
         }
       });
 

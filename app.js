@@ -53,6 +53,9 @@ app.post('/trip', function (req, res) {
       value: req.body.location.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
       literal: req.body.location
     },
+    route: {
+      path: []
+    },
     admins: [
       {
         id: req.body.socketId,
@@ -128,6 +131,11 @@ app.get('/trip/:id', function (req, res) {
         id: socket.handshake.session.id,
         down: down
       });
+    });
+
+    // Catch route edits:
+    socket.on('edit route', (latlng) => {
+      console.log(latlng);
     });
 
     socket.on('disconnect', () => {
