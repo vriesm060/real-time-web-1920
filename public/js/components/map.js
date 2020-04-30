@@ -3,8 +3,8 @@ import cursor from './cursor.js';
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
   startBtn: document.querySelector('.start-btn'),
-  path: [],
-  polylines: [],
+  // path: [],
+  // polylines: [],
   snappedCoordinates: [],
   runSnapToRoad: function (path) {
     var pathValues = [];
@@ -123,15 +123,16 @@ export default {
 
       // Build the route when clicking on the map:
       google.maps.event.addListener(self.map, 'click', (e) => {
-        // namespace.emit('edit route', e.latLng);
+        namespace.emit('edit route', e.latLng);
 
         // Push the latest coords of the route in the path array:
-        self.path.push(e.latLng);
+        // self.path.push(e.latLng);
+      });
 
-        // Select the start position of the trip on first click or add a polyline to the route:
+      namespace.on('add route segment', (path) => {
         if (!self.startMarker) {
           self.startMarker = new google.maps.Marker({
-            position: e.latLng,
+            position: path[0],
             map: self.map,
             draggable: true,
             icon: {
@@ -142,22 +143,22 @@ export default {
           });
 
           // Option to move startpoint:
-          google.maps.event.addListener(self.startMarker, 'drag', (e) => {
-            // Grab first polyline if exist and change first latLng into new latLng:
-            if (self.polylines.length > 0) {
-              self.polylines[0].getPath().i[0] = e.latLng;
-              self.polylines[0].setPath(self.polylines[0].getPath().i);
-            }
-          });
+          // google.maps.event.addListener(self.startMarker, 'drag', (e) => {
+          //   // Grab first polyline if exist and change first latLng into new latLng:
+          //   if (self.polylines.length > 0) {
+          //     self.polylines[0].getPath().i[0] = e.latLng;
+          //     self.polylines[0].setPath(self.polylines[0].getPath().i);
+          //   }
+          // });
 
           // Update path array with new latLng on dragend:
-          google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
-            self.path.splice(0, 1, e.latLng);
-          });
+          // google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
+          //   self.path.splice(0, 1, e.latLng);
+          // });
 
         } else if (!self.finishMarker) {
           var polyline = new google.maps.Polyline({
-            path: self.path.slice(self.path.length-2),
+            path: path.slice(path.length-2),
             map: self.map,
             geodesic: true,
             editable: true,
@@ -165,42 +166,44 @@ export default {
             strokeOpacity: 1,
             strokeWeight: 8
           });
-          self.polylines.push(polyline);
+          // self.polylines.push(polyline);
 
           var polylineIdx, idx;
 
           // Define the indices:
-          google.maps.event.addListener(polyline, 'mousedown', (e) => {
-            if (polyline.getPath().i.indexOf(e.latLng) !== -1) {
-              polylineIdx = polyline.getPath().i.indexOf(e.latLng);
-              idx = self.path.indexOf(e.latLng);
-            } else {
-              polylineIdx = e.edge + 1;
-              idx = self.path.indexOf(polyline.getPath().i[polylineIdx]);
-            }
-          });
+          // google.maps.event.addListener(polyline, 'mousedown', (e) => {
+          //   if (polyline.getPath().i.indexOf(e.latLng) !== -1) {
+          //     polylineIdx = polyline.getPath().i.indexOf(e.latLng);
+          //     idx = self.path.indexOf(e.latLng);
+          //   } else {
+          //     polylineIdx = e.edge + 1;
+          //     idx = self.path.indexOf(polyline.getPath().i[polylineIdx]);
+          //   }
+          // });
 
           // Update the path array with new latLng coords if a polyline has an edit:
-          google.maps.event.addListener(polyline, 'mouseup', (e) => {
-            if (e.vertex == undefined && e.edge == undefined) return;
-            var remove = e.vertex >= 0 ? 1 : 0;
-            self.path.splice(idx, remove, polyline.getPath().i[polylineIdx]);
-
-            // Move startMarker if first vertex has been moved:
-            if (self.path.indexOf(e.latLng) == 0) {
-              self.startMarker.setPosition(e.latLng);
-            }
-          });
+          // google.maps.event.addListener(polyline, 'mouseup', (e) => {
+          //   if (e.vertex == undefined && e.edge == undefined) return;
+          //   var remove = e.vertex >= 0 ? 1 : 0;
+          //   self.path.splice(idx, remove, polyline.getPath().i[polylineIdx]);
+          //
+          //   // Move startMarker if first vertex has been moved:
+          //   if (self.path.indexOf(e.latLng) == 0) {
+          //     self.startMarker.setPosition(e.latLng);
+          //   }
+          // });
 
           // When client clicks the undo button after altering the polyline, coords won't be updated again (!)
           // Either remove this option or work out the problem
 
           // Option to delete polyline:
-          google.maps.event.addListener(polyline, 'click', (e) => {
-            var deleteMenu = new DeleteMenu(polyline, e.latLng);
-          });
+          // google.maps.event.addListener(polyline, 'click', (e) => {
+          //   var deleteMenu = new DeleteMenu(polyline, e.latLng);
+          // });
         }
       });
+
+
 
       // Create the delete menu:
       function DeleteMenu(polyline, latLng) {

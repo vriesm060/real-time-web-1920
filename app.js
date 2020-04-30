@@ -53,9 +53,8 @@ app.post('/trip', function (req, res) {
       value: req.body.location.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
       literal: req.body.location
     },
-    route: {
-      path: []
-    },
+    path: [],
+    polylines: [],
     admins: [
       {
         id: req.body.socketId,
@@ -86,6 +85,9 @@ app.get('/trip/:id', function (req, res) {
         socket.emit('add cursor', user);
       }
     });
+
+    // Emit trip's path from database to socket:
+    socket.emit('add route segment', trip.path);
 
     // Determine if socket is admin, if so, give admin rights and add admin to users list:
     var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
@@ -133,10 +135,20 @@ app.get('/trip/:id', function (req, res) {
       });
     });
 
+
+
+
     // Catch route edits:
-    socket.on('edit route', (latlng) => {
-      console.log(latlng);
+    socket.on('edit route', (latLng) => {
+      console.log(latLng);
+
+      trip.path.push(latLng);
+
+      io.of(namespace).emit('add route segment', trip.path);
     });
+
+
+
 
     socket.on('disconnect', () => {
       // Remove user from users list:
