@@ -222,6 +222,10 @@ export default {
           this.close(e.target);
           e.preventDefault();
         });
+
+        google.maps.event.addListener(self.map, 'click', (e) => {
+          this.close(button);
+        });
       }
 
       // Delete the polyline:
