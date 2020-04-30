@@ -133,12 +133,28 @@ export default {
           self.startMarker = new google.maps.Marker({
             position: e.latLng,
             map: self.map,
+            draggable: true,
             icon: {
               url: '/images/icons/start_point.svg',
               scaledSize: new google.maps.Size(60,60),
               anchor: new google.maps.Point(30,55)
             }
           });
+
+          // Option to move startpoint:
+          google.maps.event.addListener(self.startMarker, 'drag', (e) => {
+            // Grab first polyline if exist and change first latLng into new latLng:
+            if (self.polylines.length > 0) {
+              self.polylines[0].getPath().i[0] = e.latLng;
+              self.polylines[0].setPath(self.polylines[0].getPath().i);
+            }
+          });
+
+          // Update path array with new latLng on dragend:
+          google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
+            self.path.splice(0, 1, e.latLng);
+          });
+
         } else if (!self.finishMarker) {
           var polyline = new google.maps.Polyline({
             path: self.path.slice(self.path.length-2),
@@ -167,12 +183,12 @@ export default {
           // Update the path array with new latLng coords if a polyline has an edit:
           google.maps.event.addListener(polyline, 'mouseup', (e) => {
             if (e.vertex == undefined && e.edge == undefined) return;
-            if (e.vertex >= 0) {
-              console.log('vertex');
-              self.path.splice(idx, 1, polyline.getPath().i[polylineIdx]);
-            } else {
-              console.log('no vertex');
-              self.path.splice(idx, 0, polyline.getPath().i[polylineIdx]);
+            var remove = e.vertex >= 0 ? 1 : 0;
+            self.path.splice(idx, remove, polyline.getPath().i[polylineIdx]);
+
+            // Move startMarker if first vertex has been moved:
+            if (self.path.indexOf(e.latLng) == 0) {
+              self.startMarker.setPosition(e.latLng);
             }
           });
 
@@ -183,8 +199,6 @@ export default {
           google.maps.event.addListener(polyline, 'click', (e) => {
             var deleteMenu = new DeleteMenu(polyline, e.latLng);
           });
-
-          // Option to move startpoint:
         }
       });
 
