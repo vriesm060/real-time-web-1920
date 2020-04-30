@@ -51,3 +51,14 @@
     }
   }
 }
+
+/********************
+  Delete menu
+********************/
+
+.delete-menu {
+  position: absolute;
+  z-index: 1;
+  color: $color-black;
+  font-size: 1em;
+}

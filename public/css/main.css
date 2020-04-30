@@ -365,6 +365,15 @@ button {
       content: '+'; }
 
 /********************
+  Delete menu
+********************/
+.delete-menu {
+  position: absolute;
+  z-index: 1;
+  color: #2C2C2C;
+  font-size: 1em; }
+
+/********************
   Login
 ********************/
 .login-overlay {
