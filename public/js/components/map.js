@@ -123,7 +123,6 @@ export default {
 
       // Build the route when clicking on the map:
       google.maps.event.addListener(self.map, 'click', (e) => {
-
         // namespace.emit('edit route', e.latLng);
 
         // Push the latest coords of the route in the path array:
@@ -167,9 +166,12 @@ export default {
 
           // Update the path array with new latLng coords if a polyline has an edit:
           google.maps.event.addListener(polyline, 'mouseup', (e) => {
+            if (e.vertex == undefined && e.edge == undefined) return;
             if (e.vertex >= 0) {
+              console.log('vertex');
               self.path.splice(idx, 1, polyline.getPath().i[polylineIdx]);
             } else {
+              console.log('no vertex');
               self.path.splice(idx, 0, polyline.getPath().i[polylineIdx]);
             }
           });
@@ -178,8 +180,49 @@ export default {
           // Either remove this option or work out the problem
 
           // Option to delete polyline:
+          google.maps.event.addListener(polyline, 'click', (e) => {
+            var deleteMenu = new DeleteMenu(polyline, e.latLng);
+          });
+
+          // Option to move startpoint:
         }
       });
+
+      // Create the delete menu:
+      function DeleteMenu(polyline, latLng) {
+        var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
+        var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
+        var worldPoint = self.map.getProjection().fromLatLngToPoint(latLng);
+        var point = new google.maps.Point((worldPoint.x - swBoundInPx.x) * scale, (worldPoint.y - neBoundInPx.y) * scale);
+        var button = document.createElement('button');
+
+        button.classList.add('delete-menu');
+        button.type = 'button';
+        button.textContent = 'Verwijderen';
+        button.style.left = (point.x + 10) + 'px';
+        button.style.top = (point.y + 10) + 'px';
+        document.body.appendChild(button);
+
+        google.maps.event.addDomListener(button, 'click', (e) => {
+          this.deletePolyline(polyline);
+          this.close(e.target);
+          e.preventDefault();
+        });
+      }
+
+      // Delete the polyline:
+      DeleteMenu.prototype.deletePolyline = function (polyline) {
+        for (var i = 1; i < polyline.getPath().i.length; i++) {
+          self.path.splice(self.path.indexOf(polyline.getPath().i[i]), 1);
+        }
+        self.polylines.splice(self.polylines.indexOf(polyline), 1);
+        polyline.setMap(null);
+      }
+
+      // Close the delete menu:
+      DeleteMenu.prototype.close = function (elem) {
+        elem.parentNode.removeChild(elem);
+      }
 
       // Run snapToRoads when clicking start:
       google.maps.event.addDomListener(self.startBtn, 'click', (e) => {
