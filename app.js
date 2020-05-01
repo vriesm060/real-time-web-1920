@@ -148,4 +148,4 @@ app.get('/trip/:id', function (req, res) {
   });
 });
 
-server.listen(process.env.PORT || 80);
+server.listen(process.env.PORT || 3000);
