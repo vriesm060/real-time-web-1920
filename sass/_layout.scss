@@ -38,8 +38,22 @@ button {
   line-height: $form-lh;
 }
 
+button {
+  font-size: $button-fz;
+}
+
 .title {
   display: block;
   margin: $spacing-unit;
+  margin-bottom: 0;
+  font-size: 4em;
+  text-align: center;
+}
+
+.subtitle {
+  display: block;
+  margin: $spacing-unit;
+  margin-top: #{.5 * $spacing-unit};
+  font-size: 1.5em;
   text-align: center;
 }
