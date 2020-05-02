@@ -14,6 +14,16 @@ var sharedsession = require('express-socket.io-session');
 var bodyParser = require('body-parser');
 var {Client, Status} = require('@googlemaps/google-maps-services-js');
 var uuid = require('short-uuid');
+var MongoClient = require('mongodb').MongoClient;
+var uri = 'mongodb+srv://max:' + process.env.MONGO_PW + '@trippiecluster-qqgdb.mongodb.net/test?retryWrites=true&w=majority';
+var client = new MongoClient(uri, { useNewUrlParser: true }, { useUnifiedTopology: true });
+
+// Connect to mongo:
+client.connect(function (err, db) {
+  if (err) throw err;
+  console.log('database created');
+  db.close();
+});
 
 app.use(session);
 app.use(bodyParser.json());
