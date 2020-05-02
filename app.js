@@ -6,7 +6,7 @@ var path = require('path');
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var session = require('express-session')({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || 'my-secret',
   resave: true,
   saveUninitialized: true
 });
@@ -168,4 +168,4 @@ app.get('/trip/:id', function (req, res) {
   });
 });
 
-server.listen(process.env.PORT);
+server.listen(process.env.PORT || 3000);
