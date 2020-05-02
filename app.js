@@ -54,7 +54,6 @@ app.post('/trip', function (req, res) {
       literal: req.body.location
     },
     path: [],
-    polylines: [],
     admins: [
       {
         id: req.body.socketId,
@@ -85,9 +84,6 @@ app.get('/trip/:id', function (req, res) {
         socket.emit('add cursor', user);
       }
     });
-
-    // Emit trip's path from database to socket:
-    socket.emit('add route segment', trip.path);
 
     // Determine if socket is admin, if so, give admin rights and add admin to users list:
     var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
@@ -141,10 +137,33 @@ app.get('/trip/:id', function (req, res) {
     // Catch route edits:
     socket.on('edit route', (latLng) => {
       console.log(latLng);
-
       trip.path.push(latLng);
-
       io.of(namespace).emit('add route segment', trip.path);
+    });
+
+    socket.on('edit startMarker', (latLng) => {
+      trip.path.splice(0, 1, latLng);
+      io.of(namespace).emit('change startMarker', trip.path);
+    });
+
+    socket.on('edit polyline', (data) => {
+      trip.path.splice(data.idx, data.remove, data.newLatLng);
+      io.of(namespace).emit('change polyline', {
+        polyline: data.polyline,
+        polylinePath: data.polylinePath,
+        idx: data.idx,
+        path: trip.path
+      });
+    });
+
+    socket.on('delete polyline', (data) => {
+      for (var i = 1; i < data.latLngs.length; i++) {
+        trip.path.splice(trip.path.indexOf(data.latLngs[i]), 1);
+      }
+      io.of(namespace).emit('polyline deleted', {
+        polyline: data.polyline,
+        path: trip.path
+      });
     });
 
 
