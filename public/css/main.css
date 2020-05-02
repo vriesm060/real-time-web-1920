@@ -244,6 +244,29 @@ button {
     -webkit-transform: scale(1, 1); } }
 
 /********************
+  Start button
+********************/
+.start-btn {
+  display: block;
+  width: calc(100% - 1.6875rem);
+  min-height: 4.375rem;
+  padding: 1.25rem;
+  border: 0.325rem solid #59FFDE;
+  border-radius: 2.1875rem;
+  margin: 2.1875rem 0.84375rem;
+  color: #59FFDE;
+  background-color: transparent;
+  font-family: "Lily Script One";
+  cursor: pointer;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease; }
+  .start-btn:hover, .start-btn:focus {
+    color: #B3008C;
+    background-color: #59FFDE; }
+
+/********************
   Share link
 ********************/
 .share-link {
@@ -352,6 +375,15 @@ button {
       text-align: center;
       line-height: 1;
       content: '+'; }
+
+/********************
+  Delete menu
+********************/
+.delete-menu {
+  position: absolute;
+  z-index: 1;
+  color: #2C2C2C;
+  font-size: 1em; }
 
 /********************
   Login
