@@ -73,6 +73,7 @@ app.post('/trip', function (req, res) {
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
   var url = req.get('host') + req.originalUrl;
+  var cachePath = [];
 
   // Get the current trip data from the database:
   client.connect(err => {
@@ -82,6 +83,11 @@ app.get('/trip/:id', function (req, res) {
     db.collection('trips').findOne({ id: req.params.id }, (err, result) => {
       if (err) throw err;
       var trip = result;
+
+      // Insert path data from database to cache:
+      trip.path.forEach(latLng => {
+        cachePath.push(latLng);
+      });
 
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
@@ -150,44 +156,85 @@ app.get('/trip/:id', function (req, res) {
           });
         });
 
+        // Add a route segment:
+        socket.on('edit route', (latLng) => {
+          console.log(latLng);
+          // Push coords to the cache data and serve this back to the clients:
+          cachePath.push(latLng);
+          io.of(namespace).emit('add route segment', cachePath);
 
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $push: {'path': latLng} }
+          );
+        });
 
-        // // Add a route segment:
-        // socket.on('edit route', (latLng) => {
-        //   console.log(latLng);
-        //   trip.path.push(latLng);
-        //   io.of(namespace).emit('add route segment', trip.path);
-        // });
-        //
-        // // Move the startMarker:
-        // socket.on('edit startMarker', (latLng) => {
-        //   trip.path.splice(0, 1, latLng);
-        //   io.of(namespace).emit('change startMarker', trip.path);
-        // });
-        //
-        // // Edit a polyline:
-        // socket.on('edit polyline', (data) => {
-        //   trip.path.splice(data.idx, data.remove, data.newLatLng);
-        //   io.of(namespace).emit('change polyline', {
-        //     polyline: data.polyline,
-        //     polylinePath: data.polylinePath,
-        //     idx: data.idx,
-        //     path: trip.path
-        //   });
-        // });
-        //
-        // // Delete a polyline:
-        // socket.on('delete polyline', (data) => {
-        //   for (var i = 1; i < data.latLngs.length; i++) {
-        //     trip.path.splice(trip.path.indexOf(data.latLngs[i]), 1);
-        //   }
-        //   io.of(namespace).emit('polyline deleted', {
-        //     polyline: data.polyline,
-        //     path: trip.path
-        //   });
-        // });
+        // Move the startMarker:
+        socket.on('edit startMarker', (latLng) => {
+          // Change first coords in path (aka startMarker) and serve it back to the clients:
+          cachePath.splice(0, 1, latLng);
+          io.of(namespace).emit('change startMarker', cachePath);
 
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $set: { 'path.0': latLng } }
+          );
+        });
 
+        // Edit a polyline:
+        socket.on('edit polyline', (data) => {
+          // Change/add coords in path and serve it back to the clients:
+          cachePath.splice(data.idx, data.remove, data.newLatLng);
+          io.of(namespace).emit('change polyline', {
+            polyline: data.polyline,
+            polylinePath: data.polylinePath,
+            idx: data.idx,
+            path: cachePath
+          });
+
+          // Update database:
+          if (data.remove == 0) {
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $push: { 'path': {
+                $each: [data.newLatLng],
+                $position: data.idx
+              } } }
+            );
+          } else if (data.remove == 1) {
+            var field = 'path.' + data.idx;
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $unset: { [field]: 1 } }
+            );
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $set: { [field]: data.newLatLng } }
+            );
+          }
+        });
+
+        // Delete a polyline:
+        socket.on('delete polyline', (data) => {
+          // Remove coords from path and serve it back to the clients:
+          for (var i = 1; i < data.latLngs.length; i++) {
+            cachePath.splice(cachePath.indexOf(data.latLngs[i]), 1);
+          }
+          io.of(namespace).emit('polyline deleted', {
+            polyline: data.polyline,
+            path: cachePath
+          });
+
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $pull: { 'path': {
+              $in: data.latLngs.splice(1, data.latLngs.length-1)
+            } } }
+          );
+        });
 
         socket.on('disconnect', () => {
           var curUser = activeUsers.find(user => user.id == socket.handshake.session.id);
