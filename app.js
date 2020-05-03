@@ -55,7 +55,8 @@ app.post('/trip', function (req, res) {
       {
         id: req.body.socketId,
         username: req.body.username,
-        admin: true
+        admin: true,
+        root: true
       }
     ]
   };
@@ -91,24 +92,19 @@ app.get('/trip/:id', function (req, res) {
       var trip = result;
       var namespacePath = cachePaths.find(path => path.namespace == namespace);
 
-      // Insert path data from database to cache:
-      trip.path.forEach(latLng => {
-        namespacePath.latLngs.push(latLng);
-      });
-
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
         // Catch request from client to update path data:
         socket.on('request update path data', () => {
-          socket.emit('update path data', namespacePath.latLngs);
+          socket.emit('update path data', trip.path);
         });
 
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
             socket.emit('add user', user);
-            socket.emit('add cursor', user);
+            if (user.admin) socket.emit('add cursor', user);
           }
         });
 
@@ -133,19 +129,22 @@ app.get('/trip/:id', function (req, res) {
         socket.emit('show login');
         io.of(namespace).to('admin').emit('hide login');
 
+        // Activate maps functions for admins only:
+        socket.on('request admin update', () => {
+          io.of(namespace).to('admin').emit('enable admin rights');
+        });
+
         // When a client submits their name:
         socket.on('post user', (user) => {
           // Add client to the active users list:
           user.id = socket.handshake.session.id;
           user.namespace = namespace;
           user.admin = false;
+          user.root = false;
           activeUsers.push(user);
 
           // Show client is online:
           io.of(namespace).emit('add user', user);
-
-          // Temporary, needs to be removed when we're gonna work with admins:
-          socket.broadcast.emit('add cursor', user);
         });
 
         // Temporary console.log:
@@ -220,10 +219,6 @@ app.get('/trip/:id', function (req, res) {
             );
           } else if (data.remove == 1) {
             var field = 'path.' + data.idx;
-            db.collection('trips').updateOne(
-              { id: trip.id },
-              { $unset: { [field]: 1 } }
-            );
             db.collection('trips').updateOne(
               { id: trip.id },
               { $set: { [field]: data.newLatLng } }
