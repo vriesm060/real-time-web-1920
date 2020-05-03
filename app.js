@@ -26,6 +26,7 @@ app.set('view engine', 'ejs');
 
 // Create a users list for all active users:
 var activeUsers = [];
+var cachePaths = [];
 
 io.use(sharedsession(session, { autoSave: true }));
 
@@ -73,7 +74,12 @@ app.post('/trip', function (req, res) {
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
   var url = req.get('host') + req.originalUrl;
-  var cachePath = [];
+
+  // Push an object for this namespace into the cachePath array:
+  cachePaths.push({
+    namespace: namespace,
+    latLngs: []
+  });
 
   // Get the current trip data from the database:
   client.connect(err => {
@@ -83,10 +89,11 @@ app.get('/trip/:id', function (req, res) {
     db.collection('trips').findOne({ id: req.params.id }, (err, result) => {
       if (err) throw err;
       var trip = result;
+      var namespacePath = cachePaths.find(path => path.namespace == namespace);
 
       // Insert path data from database to cache:
       trip.path.forEach(latLng => {
-        cachePath.push(latLng);
+        namespacePath.latLngs.push(latLng);
       });
 
       // Connect to the current trip:
@@ -94,7 +101,7 @@ app.get('/trip/:id', function (req, res) {
       io.of(namespace).once('connection', (socket) => {
         // Catch request from client to update path data:
         socket.on('request update path data', () => {
-          socket.emit('update path data', cachePath);
+          socket.emit('update path data', namespacePath.latLngs);
         });
 
         // Show to socket who is active:
@@ -166,10 +173,10 @@ app.get('/trip/:id', function (req, res) {
 
         // Add a route segment:
         socket.on('edit route', (latLng) => {
-          console.log(latLng);
+          console.log('latLng: ', latLng);
           // Push coords to the cache data and serve this back to the clients:
-          cachePath.push(latLng);
-          io.of(namespace).emit('add route segment', cachePath);
+          namespacePath.latLngs.push(latLng);
+          io.of(namespace).emit('add route segment', namespacePath.latLngs);
 
           // Update database:
           db.collection('trips').updateOne(
@@ -181,8 +188,8 @@ app.get('/trip/:id', function (req, res) {
         // Move the startMarker:
         socket.on('edit startMarker', (latLng) => {
           // Change first coords in path (aka startMarker) and serve it back to the clients:
-          cachePath.splice(0, 1, latLng);
-          io.of(namespace).emit('change startMarker', cachePath);
+          namespacePath.latLngs.splice(0, 1, latLng);
+          io.of(namespace).emit('change startMarker', namespacePath.latLngs);
 
           // Update database:
           db.collection('trips').updateOne(
@@ -194,12 +201,12 @@ app.get('/trip/:id', function (req, res) {
         // Edit a polyline:
         socket.on('edit polyline', (data) => {
           // Change/add coords in path and serve it back to the clients:
-          cachePath.splice(data.idx, data.remove, data.newLatLng);
+          namespacePath.latLngs.splice(data.idx, data.remove, data.newLatLng);
           io.of(namespace).emit('change polyline', {
             polyline: data.polyline,
             polylinePath: data.polylinePath,
             idx: data.idx,
-            path: cachePath
+            path: namespacePath.latLngs
           });
 
           // Update database:
@@ -228,11 +235,11 @@ app.get('/trip/:id', function (req, res) {
         socket.on('delete polyline', (data) => {
           // Remove coords from path and serve it back to the clients:
           for (var i = 1; i < data.latLngs.length; i++) {
-            cachePath.splice(cachePath.indexOf(data.latLngs[i]), 1);
+            namespacePath.latLngs.splice(namespacePath.latLngs.indexOf(data.latLngs[i]), 1);
           }
           io.of(namespace).emit('polyline deleted', {
             polyline: data.polyline,
-            path: cachePath
+            path: namespacePath.latLngs
           });
 
           // Update database:
