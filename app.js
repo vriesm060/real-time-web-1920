@@ -92,6 +92,11 @@ app.get('/trip/:id', function (req, res) {
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
+        // Catch request from client to update path data:
+        socket.on('request update path data', () => {
+          socket.emit('update path data', cachePath);
+        });
+
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
@@ -131,6 +136,9 @@ app.get('/trip/:id', function (req, res) {
 
           // Show client is online:
           io.of(namespace).emit('add user', user);
+
+          // Temporary, needs to be removed when we're gonna work with admins:
+          socket.broadcast.emit('add cursor', user);
         });
 
         // Temporary console.log:

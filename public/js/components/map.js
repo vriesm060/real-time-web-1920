@@ -24,6 +24,9 @@ export default {
         zoom: 17
       });
 
+      // Request path data update from server:
+      namespace.emit('request update path data');
+
       // Change map bounds:
       google.maps.event.addListener(self.map, 'bounds_changed', (e) => {
         var getBounds = self.map.getBounds();
@@ -38,6 +41,31 @@ export default {
         scale = Math.pow(2, self.map.getZoom());
       });
 
+      // Calculate latLng from point on screen:
+      google.maps.event.addDomListener(map, 'mousemove', (e) => {
+        var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
+        var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
+        var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
+        var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
+        namespace.emit('cursor move', latlng);
+      });
+
+      // Broadcast when a client clicks on the map:
+      google.maps.event.addDomListener(map, 'mousedown', (e) => {
+        namespace.emit('cursor click', true);
+      });
+
+      // Broadcast when a client releases the click on the map:
+      google.maps.event.addDomListener(map, 'mouseup', (e) => {
+        namespace.emit('cursor click', false);
+      });
+
+      // Build the route when clicking on the map:
+      google.maps.event.addListener(self.map, 'click', (e) => {
+        namespace.emit('edit route', e.latLng);
+      });
+
+      // Function to add new route segments:
       function addRouteSegment(path) {
         self.path = path;
         if (path.length > 0 && !self.startMarker) {
@@ -50,20 +78,6 @@ export default {
               scaledSize: new google.maps.Size(60,60),
               anchor: new google.maps.Point(30,55)
             }
-          });
-
-          // Option to move startpoint:
-          google.maps.event.addListener(self.startMarker, 'drag', (e) => {
-            // Grab first polyline if exist and change first latLng into new latLng:
-            if (self.polylines.length > 0) {
-              self.polylines[0].getPath().i[0] = e.latLng;
-              self.polylines[0].setPath(self.polylines[0].getPath().i);
-            }
-          });
-
-          // Update path array with new latLng on dragend:
-          google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
-            namespace.emit('edit startMarker', e.latLng);
           });
         }
 
@@ -78,7 +92,27 @@ export default {
             strokeWeight: 8
           });
           self.polylines.push(polyline);
+        }
+      }
 
+      if (self.startMarker) {
+        // Option to move start marker:
+        google.maps.event.addListener(self.startMarker, 'drag', (e) => {
+          // Grab first polyline if exist and change first latLng into new latLng:
+          if (self.polylines.length > 0) {
+            self.polylines[0].getPath().i[0] = e.latLng;
+            self.polylines[0].setPath(self.polylines[0].getPath().i);
+          }
+        });
+
+        // Update path array with new latLng on dragend:
+        google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
+          namespace.emit('edit startMarker', e.latLng);
+        });
+      }
+
+      if (self.polylines.length > 0) {
+        self.polylines.forEach(polyline => {
           var polylineIdx, idx;
 
           // Define the indices:
@@ -96,7 +130,6 @@ export default {
           // Update the path array with new latLng coords if a polyline has an edit:
           google.maps.event.addListener(polyline, 'mouseup', (e) => {
             if (e.vertex == undefined && e.edge == undefined) return;
-
             namespace.emit('edit polyline', {
               polyline: self.polylines.indexOf(polyline),
               polylinePath: polyline.getPath().i,
@@ -113,52 +146,33 @@ export default {
           google.maps.event.addListener(polyline, 'click', (e) => {
             var deleteMenu = new DeleteMenu(polyline, e.latLng);
           });
-        }
+        });
       }
-      // addRouteSegment(self.path);
 
-      // Calculate latLng from point on screen:
-      google.maps.event.addDomListener(map, 'mousemove', (e) => {
-        var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
-        var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
-        var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
-        var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
-
-        namespace.emit('cursor move', latlng);
-      });
-
-      // Calculate point on screen from latLng:
+      // Namespace listeners:
       namespace
+        .on('update path data', (path) => {
+          // Catch updated path data and display on the map:
+          addRouteSegment(path);
+        })
+
         .on('change cursor', (client) => {
+          // Calculate point on screen from latLng:
           var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
           var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
           var latlng = new google.maps.LatLng(client.latlng);
           var worldPoint = self.map.getProjection().fromLatLngToPoint(latlng);
           var point = new google.maps.Point((worldPoint.x - swBoundInPx.x) * scale, (worldPoint.y - neBoundInPx.y) * scale);
-
           cursor.changeCursorPosition(client.id, point);
-        });
+        })
 
-      // Broadcast when a client clicks on the map:
-      google.maps.event.addDomListener(map, 'mousedown', (e) => {
-        namespace.emit('cursor click', true);
-      });
-
-      // Broadcast when a client releases the click on the map:
-      google.maps.event.addDomListener(map, 'mouseup', (e) => {
-        namespace.emit('cursor click', false);
-      });
-
-      // Build the route when clicking on the map:
-      google.maps.event.addListener(self.map, 'click', (e) => {
-        namespace.emit('edit route', e.latLng);
-      });
-
-      namespace
         .on('add route segment', (path) => {
+          // Add a route segment:
           addRouteSegment(path);
         })
+
         .on('change startMarker', (path) => {
+          // Change the position of the start marker:
           self.startMarker.setPosition(new google.maps.LatLng(path[0].lat, path[0].lng));
           if (self.polylines.length > 0) {
             self.polylines[0].getPath().i[0] = path[0];
@@ -166,7 +180,9 @@ export default {
           }
           self.path = path;
         })
+
         .on('change polyline', (data) => {
+          // Change the polyline:
           self.polylines[data.polyline].setPath(data.polylinePath);
           self.path = data.path;
 
@@ -174,7 +190,9 @@ export default {
             self.startMarker.setPosition(new google.maps.LatLng(data.path[data.idx].lat, data.path[data.idx].lng));
           }
         })
+
         .on('polyline deleted', (data) => {
+          // Delete a polyline:
           self.polylines[data.polyline].setMap(null);
           self.polylines.splice(data.polyline, 1);
           self.path = data.path;
