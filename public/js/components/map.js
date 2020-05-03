@@ -12,12 +12,6 @@ export default {
     script.defer = true;
     script.async = true;
 
-    // namespace
-    //   .on('add path history', (path) => {
-    //     console.log('update history');
-    //     path.forEach(latLng => this.path.push(latLng));
-    //   });
-
     // Init Google Maps function:
     window.initMap = function () {
       var map = document.getElementById('map');
@@ -166,8 +160,10 @@ export default {
         })
         .on('change startMarker', (path) => {
           self.startMarker.setPosition(new google.maps.LatLng(path[0].lat, path[0].lng));
-          self.polylines[0].getPath().i[0] = path[0];
-          self.polylines[0].setPath(self.polylines[0].getPath().i);
+          if (self.polylines.length > 0) {
+            self.polylines[0].getPath().i[0] = path[0];
+            self.polylines[0].setPath(self.polylines[0].getPath().i);
+          }
           self.path = path;
         })
         .on('change polyline', (data) => {
