@@ -95,11 +95,6 @@ app.get('/trip/:id', function (req, res) {
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
-        // Catch request from client to update path data:
-        socket.on('request update path data', () => {
-          socket.emit('update path data', trip.path);
-        });
-
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
@@ -132,6 +127,11 @@ app.get('/trip/:id', function (req, res) {
         // Activate maps functions for admins only:
         socket.on('request admin update', () => {
           io.of(namespace).to('admin').emit('enable admin rights');
+        });
+
+        // Catch request from client to update path data:
+        socket.on('request update path data', () => {
+          socket.emit('update path data', trip.path);
         });
 
         // When a client submits their name:

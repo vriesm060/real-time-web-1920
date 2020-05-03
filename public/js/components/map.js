@@ -25,11 +25,11 @@ export default {
         zoom: 17
       });
 
-      // Request path data update from server:
-      namespace.emit('request update path data');
-
       // Request admin update from server:
       namespace.emit('request admin update');
+
+      // Request path data update from server:
+      namespace.emit('request update path data');
 
       // Change map bounds:
       google.maps.event.addListener(self.map, 'bounds_changed', (e) => {
@@ -78,7 +78,7 @@ export default {
             self.startMarker = new google.maps.Marker({
               position: latLng,
               map: self.map,
-              draggable: true,
+              draggable: self.admin ? true : false,
               icon: {
                 url: '/images/icons/start_point.svg',
                 scaledSize: new google.maps.Size(60,60),
@@ -104,7 +104,7 @@ export default {
               path: self.path.slice(self.path.indexOf(latLng)-1, self.path.indexOf(latLng)+1),
               map: self.map,
               geodesic: true,
-              editable: true,
+              editable: self.admin ? true : false,
               strokeColor: '#B3008C',
               strokeOpacity: 1,
               strokeWeight: 8
@@ -142,7 +142,10 @@ export default {
 
             // Option to delete polyline:
             google.maps.event.addListener(polyline, 'click', (e) => {
-              var deleteMenu = new DeleteMenu(polyline, e.latLng);
+              if (self.admin) {
+                var deleteMenu = new DeleteMenu(polyline, e.latLng);
+              }
+
             });
           }
         }
