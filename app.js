@@ -14,6 +14,9 @@ var sharedsession = require('express-socket.io-session');
 var bodyParser = require('body-parser');
 var {Client, Status} = require('@googlemaps/google-maps-services-js');
 var uuid = require('short-uuid');
+var MongoClient = require('mongodb').MongoClient;
+var uri = 'mongodb+srv://max:' + process.env.MONGO_PW + '@trippiecluster-qqgdb.mongodb.net/test?retryWrites=true&w=majority';
+var client = new MongoClient(uri, { useNewUrlParser: true }, { useUnifiedTopology: true });
 
 app.use(session);
 app.use(bodyParser.json());
@@ -21,15 +24,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 
-var client = new Client({});
-
-// Create a temporary database to save trip info and user info: admin, regular users
-var database = {
-  trips: []
-};
-
 // Create a users list for all active users:
-var users = [];
+var activeUsers = [];
+var cachePaths = [];
 
 io.use(sharedsession(session, { autoSave: true }));
 
@@ -42,9 +39,9 @@ app.get('/', function (req, res) {
 });
 
 app.post('/trip', function (req, res) {
+  // Create trip object:
   var trip = {
     id: uuid.generate(),
-    expiration: Date.now() + (60 * 60 * 1000),
     name: {
       value: req.body.trip.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
       literal: req.body.trip
@@ -63,127 +60,219 @@ app.post('/trip', function (req, res) {
     ]
   };
 
-  database.trips.push(trip);
-  res.redirect('/trip/' + trip.id);
+  client.connect(err => {
+    if (err) throw err;
+    var db = client.db('trippie');
+    db.collection('trips').insertOne(trip, (err, result) => {
+      if (err) throw err;
+      console.log('trip added');
+      res.redirect('/trip/' + trip.id);
+    });
+  });
 });
 
 app.get('/trip/:id', function (req, res) {
   var namespace = '/' + req.params.id;
   var url = req.get('host') + req.originalUrl;
-  var trip = database.trips.find(trip => trip.id == req.params.id);
 
-  io.of(namespace).use(sharedsession(session, { autoSave: true }));
-  io.of(namespace).once('connection', (socket) => {
-    // Update the trip's expiration date by an hour:
-    trip.expiration += (60 * 60 * 1000);
-
-    // Show to socket who is active:
-    users.forEach(user => {
-      if (user.namespace == namespace) {
-        socket.emit('add user', user);
-        socket.emit('add cursor', user);
-      }
-    });
-
-    // Determine if socket is admin, if so, give admin rights and add admin to users list:
-    var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
-    if (admin) {
-      socket.join('admin');
-      admin.namespace = namespace;
-      users.push(admin);
-      io.of(namespace).emit('add user', admin);
-      socket.broadcast.emit('add cursor', admin);
-    }
-
-    // Show login modal to each client that isn't an admin:
-    socket.emit('show login');
-    io.of(namespace).to('admin').emit('hide login');
-
-    // Add client's username to users list:
-    socket.on('post user', (client) => {
-      client.id = socket.handshake.session.id;
-      client.admin = false;
-      client.namespace = namespace;
-      users.push(client);
-      io.of(namespace).emit('add user', client);
-      socket.broadcast.emit('add cursor', client);
-    });
-
-    if (admin) {
-      console.log('Welcome ' + admin.username);
-    } else {
-      console.log('Welcome random user');
-    }
-
-    // Show other client's cursor in real-time:
-    socket.on('cursor move', (latlng) => {
-      socket.broadcast.emit('change cursor', {
-        id: socket.handshake.session.id,
-        latlng: latlng
-      });
-    });
-
-    // Show other client's cursor clicked in real-time:
-    socket.on('cursor click', (down) => {
-      socket.broadcast.emit('pulse cursor', {
-        id: socket.handshake.session.id,
-        down: down
-      });
-    });
-
-
-
-
-    // Catch route edits:
-    socket.on('edit route', (latLng) => {
-      console.log(latLng);
-      trip.path.push(latLng);
-      io.of(namespace).emit('add route segment', trip.path);
-    });
-
-    socket.on('edit startMarker', (latLng) => {
-      trip.path.splice(0, 1, latLng);
-      io.of(namespace).emit('change startMarker', trip.path);
-    });
-
-    socket.on('edit polyline', (data) => {
-      trip.path.splice(data.idx, data.remove, data.newLatLng);
-      io.of(namespace).emit('change polyline', {
-        polyline: data.polyline,
-        polylinePath: data.polylinePath,
-        idx: data.idx,
-        path: trip.path
-      });
-    });
-
-    socket.on('delete polyline', (data) => {
-      for (var i = 1; i < data.latLngs.length; i++) {
-        trip.path.splice(trip.path.indexOf(data.latLngs[i]), 1);
-      }
-      io.of(namespace).emit('polyline deleted', {
-        polyline: data.polyline,
-        path: trip.path
-      });
-    });
-
-
-
-
-    socket.on('disconnect', () => {
-      // Remove user from users list:
-      var curUser = users.find(user => user.id == socket.handshake.session.id);
-      if (curUser && curUser.namespace == namespace) {
-        users.splice(users.indexOf(curUser), 1);
-        io.of(namespace).emit('user left', curUser);
-        socket.broadcast.emit('remove cursor', curUser);
-      }
-    });
+  // Push an object for this namespace into the cachePath array:
+  cachePaths.push({
+    namespace: namespace,
+    latLngs: []
   });
 
-  res.render('trip', {
-    title: trip.name.literal,
-    location: trip.location.literal,
-    url: url
+  // Get the current trip data from the database:
+  client.connect(err => {
+    if (err) throw err;
+    var db = client.db('trippie');
+
+    db.collection('trips').findOne({ id: req.params.id }, (err, result) => {
+      if (err) throw err;
+      var trip = result;
+      var namespacePath = cachePaths.find(path => path.namespace == namespace);
+
+      // Insert path data from database to cache:
+      trip.path.forEach(latLng => {
+        namespacePath.latLngs.push(latLng);
+      });
+
+      // Connect to the current trip:
+      io.of(namespace).use(sharedsession(session, { autoSave: true }));
+      io.of(namespace).once('connection', (socket) => {
+        // Catch request from client to update path data:
+        socket.on('request update path data', () => {
+          socket.emit('update path data', namespacePath.latLngs);
+        });
+
+        // Show to socket who is active:
+        activeUsers.forEach(user => {
+          if (user.namespace == namespace) {
+            socket.emit('add user', user);
+            socket.emit('add cursor', user);
+          }
+        });
+
+        // Determine if client is admin:
+        var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
+        if (admin) {
+          // Give client admin rights:
+          socket.join('admin');
+
+          // Add admin to list of active users:
+          admin.namespace = namespace;
+          activeUsers.push(admin);
+
+          // Show admin is online:
+          io.of(namespace).emit('add user', admin);
+
+          // Show admin's cursor to other clients:
+          socket.broadcast.emit('add cursor', admin);
+        }
+
+        // Show login modal to each client that isn't an admin:
+        socket.emit('show login');
+        io.of(namespace).to('admin').emit('hide login');
+
+        // When a client submits their name:
+        socket.on('post user', (user) => {
+          // Add client to the active users list:
+          user.id = socket.handshake.session.id;
+          user.namespace = namespace;
+          user.admin = false;
+          activeUsers.push(user);
+
+          // Show client is online:
+          io.of(namespace).emit('add user', user);
+
+          // Temporary, needs to be removed when we're gonna work with admins:
+          socket.broadcast.emit('add cursor', user);
+        });
+
+        // Temporary console.log:
+        if (admin) {
+          console.log('Welcome ' + admin.username);
+        } else {
+          console.log('Welcome random user');
+        }
+
+        // Show other client's cursor in real-time:
+        socket.on('cursor move', (latlng) => {
+          socket.broadcast.emit('change cursor', {
+            id: socket.handshake.session.id,
+            latlng: latlng
+          });
+        });
+
+        // Show other client's cursor clicked in real-time:
+        socket.on('cursor click', (down) => {
+          socket.broadcast.emit('pulse cursor', {
+            id: socket.handshake.session.id,
+            down: down
+          });
+        });
+
+        // Add a route segment:
+        socket.on('edit route', (latLng) => {
+          console.log('latLng: ', latLng);
+          // Push coords to the cache data and serve this back to the clients:
+          namespacePath.latLngs.push(latLng);
+          io.of(namespace).emit('add route segment', namespacePath.latLngs);
+
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $push: {'path': latLng} }
+          );
+        });
+
+        // Move the startMarker:
+        socket.on('edit startMarker', (latLng) => {
+          // Change first coords in path (aka startMarker) and serve it back to the clients:
+          namespacePath.latLngs.splice(0, 1, latLng);
+          io.of(namespace).emit('change startMarker', namespacePath.latLngs);
+
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $set: { 'path.0': latLng } }
+          );
+        });
+
+        // Edit a polyline:
+        socket.on('edit polyline', (data) => {
+          // Change/add coords in path and serve it back to the clients:
+          namespacePath.latLngs.splice(data.idx, data.remove, data.newLatLng);
+          io.of(namespace).emit('change polyline', {
+            polyline: data.polyline,
+            polylinePath: data.polylinePath,
+            idx: data.idx,
+            path: namespacePath.latLngs
+          });
+
+          // Update database:
+          if (data.remove == 0) {
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $push: { 'path': {
+                $each: [data.newLatLng],
+                $position: data.idx
+              } } }
+            );
+          } else if (data.remove == 1) {
+            var field = 'path.' + data.idx;
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $unset: { [field]: 1 } }
+            );
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $set: { [field]: data.newLatLng } }
+            );
+          }
+        });
+
+        // Delete a polyline:
+        socket.on('delete polyline', (data) => {
+          // Remove coords from path and serve it back to the clients:
+          for (var i = 1; i < data.latLngs.length; i++) {
+            namespacePath.latLngs.splice(namespacePath.latLngs.indexOf(data.latLngs[i]), 1);
+          }
+          io.of(namespace).emit('polyline deleted', {
+            polyline: data.polyline,
+            path: namespacePath.latLngs
+          });
+
+          // Update database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $pull: { 'path': {
+              $in: data.latLngs.splice(1, data.latLngs.length-1)
+            } } }
+          );
+        });
+
+        socket.on('disconnect', () => {
+          var curUser = activeUsers.find(user => user.id == socket.handshake.session.id);
+          if (curUser && curUser.namespace == namespace) {
+            // Remove client from active users list:
+            activeUsers.splice(activeUsers.indexOf(curUser), 1);
+
+            // Show the client left:
+            io.of(namespace).emit('user left', curUser);
+
+            // If client was an admin, remove his cursor:
+            if (curUser.admin) socket.broadcast.emit('remove cursor', curUser);
+          }
+        });
+      });
+
+      res.render('trip', {
+        title: result.name.literal,
+        location: result.location.literal,
+        url: url
+      });
+      client.close();
+    });
   });
 });
 
