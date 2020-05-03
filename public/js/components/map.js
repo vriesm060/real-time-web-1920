@@ -79,6 +79,20 @@ export default {
               anchor: new google.maps.Point(30,55)
             }
           });
+
+          // Option to move start marker:
+          google.maps.event.addListener(self.startMarker, 'drag', (e) => {
+            // Grab first polyline if exist and change first latLng into new latLng:
+            if (self.polylines.length > 0) {
+              self.polylines[0].getPath().i[0] = e.latLng;
+              self.polylines[0].setPath(self.polylines[0].getPath().i);
+            }
+          });
+
+          // Update path array with new latLng on dragend:
+          google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
+            namespace.emit('edit startMarker', e.latLng);
+          });
         }
 
         if (path.length > 1) {
@@ -92,61 +106,43 @@ export default {
             strokeWeight: 8
           });
           self.polylines.push(polyline);
-        }
-      }
 
-      if (self.startMarker) {
-        // Option to move start marker:
-        google.maps.event.addListener(self.startMarker, 'drag', (e) => {
-          // Grab first polyline if exist and change first latLng into new latLng:
-          if (self.polylines.length > 0) {
-            self.polylines[0].getPath().i[0] = e.latLng;
-            self.polylines[0].setPath(self.polylines[0].getPath().i);
-          }
-        });
+          self.polylines.forEach(polyline => {
+            var polylineIdx, idx;
 
-        // Update path array with new latLng on dragend:
-        google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
-          namespace.emit('edit startMarker', e.latLng);
-        });
-      }
+            // Define the indices:
+            google.maps.event.addListener(polyline, 'mousedown', (e) => {
+              if (e.vertex == undefined && e.edge == undefined) return;
+              if (polyline.getPath().i.indexOf(e.latLng) !== -1) {
+                polylineIdx = polyline.getPath().i.indexOf(e.latLng);
+                idx = self.path.map(latlng => latlng.lat).indexOf(e.latLng.lat());
+              } else {
+                polylineIdx = e.edge + 1;
+                idx = self.path.map(latlng => latlng.lat).indexOf(polyline.getPath().i[polylineIdx].lat());
+              }
+            });
 
-      if (self.polylines.length > 0) {
-        self.polylines.forEach(polyline => {
-          var polylineIdx, idx;
+            // Update the path array with new latLng coords if a polyline has an edit:
+            google.maps.event.addListener(polyline, 'mouseup', (e) => {
+              if (e.vertex == undefined && e.edge == undefined) return;
+              namespace.emit('edit polyline', {
+                polyline: self.polylines.indexOf(polyline),
+                polylinePath: polyline.getPath().i,
+                idx: idx,
+                remove: e.vertex >= 0 ? 1 : 0,
+                newLatLng: polyline.getPath().i[polylineIdx]
+              });
+            });
 
-          // Define the indices:
-          google.maps.event.addListener(polyline, 'mousedown', (e) => {
-            if (e.vertex == undefined && e.edge == undefined) return;
-            if (polyline.getPath().i.indexOf(e.latLng) !== -1) {
-              polylineIdx = polyline.getPath().i.indexOf(e.latLng);
-              idx = self.path.map(latlng => latlng.lat).indexOf(e.latLng.lat());
-            } else {
-              polylineIdx = e.edge + 1;
-              idx = self.path.map(latlng => latlng.lat).indexOf(polyline.getPath().i[polylineIdx].lat());
-            }
-          });
+            // When client clicks the undo button after altering the polyline, coords won't be updated again (!)
+            // Either remove this option or work out the problem
 
-          // Update the path array with new latLng coords if a polyline has an edit:
-          google.maps.event.addListener(polyline, 'mouseup', (e) => {
-            if (e.vertex == undefined && e.edge == undefined) return;
-            namespace.emit('edit polyline', {
-              polyline: self.polylines.indexOf(polyline),
-              polylinePath: polyline.getPath().i,
-              idx: idx,
-              remove: e.vertex >= 0 ? 1 : 0,
-              newLatLng: polyline.getPath().i[polylineIdx]
+            // Option to delete polyline:
+            google.maps.event.addListener(polyline, 'click', (e) => {
+              var deleteMenu = new DeleteMenu(polyline, e.latLng);
             });
           });
-
-          // When client clicks the undo button after altering the polyline, coords won't be updated again (!)
-          // Either remove this option or work out the problem
-
-          // Option to delete polyline:
-          google.maps.event.addListener(polyline, 'click', (e) => {
-            var deleteMenu = new DeleteMenu(polyline, e.latLng);
-          });
-        });
+        }
       }
 
       // Namespace listeners:
