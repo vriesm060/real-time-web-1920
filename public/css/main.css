@@ -165,6 +165,8 @@ button {
     display: block;
     width: 100%;
     list-style-type: none; }
+    .active-users__list > li {
+      position: relative; }
 
 .user {
   display: -webkit-inline-flex;
@@ -183,10 +185,15 @@ button {
   margin: .5rem .84375rem;
   color: #59FFDE;
   text-decoration: none;
-  -webkit-transform: scale(0.5, 0.5);
-  -moz-transform: scale(0.5, 0.5);
-  -o-transform: scale(0.5, 0.5);
-  transform: scale(0.5, 0.5);
+  cursor: pointer;
+  -webkit-transform: translateX(0);
+  -moz-transform: translateX(0);
+  -o-transform: translateX(0);
+  transform: translateX(0);
+  -webkit-transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  -moz-transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  -o-transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   -webkit-animation: showUser 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
   -moz-animation: showUser 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
   -o-animation: showUser 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
@@ -213,6 +220,11 @@ button {
     margin: 0 1.09375rem;
     font-size: 1em;
     line-height: 1; }
+  .user:hover, .user:active {
+    -webkit-transform: translateX(10px);
+    -moz-transform: translateX(10px);
+    -o-transform: translateX(10px);
+    transform: translateX(10px); }
   .user.admin .user__initial {
     color: #73005A;
     background-color: #59FFDE; }
@@ -237,11 +249,57 @@ button {
 
 @-webkit-keyframes showUser {
   0% {
-    opacity: 0;
-    -webkit-transform: scale(0.6, 0.6); }
+    opacity: 0; }
   100% {
-    opacity: 1;
-    -webkit-transform: scale(1, 1); } }
+    opacity: 1; } }
+
+@-moz-keyframes showUser {
+  0% {
+    opacity: 0; }
+  100% {
+    opacity: 1; } }
+
+@-o-keyframes showUser {
+  0% {
+    opacity: 0; }
+  100% {
+    opacity: 1; } }
+
+@keyframes showUser {
+  0% {
+    opacity: 0; }
+  100% {
+    opacity: 1; } }
+
+/********************
+  User option
+********************/
+.user-option {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: block;
+  min-width: 10rem;
+  min-height: 2.1875rem;
+  padding: .59375rem;
+  border-width: .125rem;
+  border-style: solid;
+  border-radius: 1.09375rem;
+  background-color: transparent;
+  font-size: .75em;
+  cursor: pointer; }
+  .user-option.add-admin {
+    border-color: #59FFDE;
+    color: #59FFDE; }
+    .user-option.add-admin:hover, .user-option.add-admin:focus {
+      color: #73005A;
+      background-color: #59FFDE; }
+  .user-option.remove-admin {
+    border-color: #FF6673;
+    color: #FF6673; }
+    .user-option.remove-admin:hover, .user-option.remove-admin:focus {
+      color: #FFFFFF;
+      background-color: #FF6673; }
 
 /********************
   Start button

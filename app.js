@@ -55,7 +55,8 @@ app.post('/trip', function (req, res) {
       {
         id: req.body.socketId,
         username: req.body.username,
-        admin: true
+        admin: true,
+        root: true
       }
     ]
   };
@@ -65,7 +66,6 @@ app.post('/trip', function (req, res) {
     var db = client.db('trippie');
     db.collection('trips').insertOne(trip, (err, result) => {
       if (err) throw err;
-      console.log('trip added');
       res.redirect('/trip/' + trip.id);
     });
   });
@@ -91,24 +91,14 @@ app.get('/trip/:id', function (req, res) {
       var trip = result;
       var namespacePath = cachePaths.find(path => path.namespace == namespace);
 
-      // Insert path data from database to cache:
-      trip.path.forEach(latLng => {
-        namespacePath.latLngs.push(latLng);
-      });
-
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
-        // Catch request from client to update path data:
-        socket.on('request update path data', () => {
-          socket.emit('update path data', namespacePath.latLngs);
-        });
-
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
             socket.emit('add user', user);
-            socket.emit('add cursor', user);
+            if (user.admin) socket.emit('add cursor', user);
           }
         });
 
@@ -116,7 +106,11 @@ app.get('/trip/:id', function (req, res) {
         var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
         if (admin) {
           // Give client admin rights:
-          socket.join('admin');
+          if (admin.root) {
+            socket.join('root');
+          } else {
+            socket.join('admin');
+          }
 
           // Add admin to list of active users:
           admin.namespace = namespace;
@@ -131,7 +125,22 @@ app.get('/trip/:id', function (req, res) {
 
         // Show login modal to each client that isn't an admin:
         socket.emit('show login');
-        io.of(namespace).to('admin').emit('hide login');
+        io.of(namespace).to('root').to('admin').emit('hide login');
+
+        // Activate maps functions for admins only:
+        socket.on('request admin update', () => {
+          io.of(namespace).to('root').to('admin').emit('enable admin rights');
+        });
+
+        // Activate add/remove admins functions for root only:
+        socket.on('request root update', () => {
+          io.of(namespace).to('root').emit('enable root rights');
+        });
+
+        // Catch request from client to update path data:
+        socket.on('request update path data', () => {
+          socket.emit('update path data', trip.path);
+        });
 
         // When a client submits their name:
         socket.on('post user', (user) => {
@@ -139,21 +148,49 @@ app.get('/trip/:id', function (req, res) {
           user.id = socket.handshake.session.id;
           user.namespace = namespace;
           user.admin = false;
+          user.root = false;
           activeUsers.push(user);
 
           // Show client is online:
           io.of(namespace).emit('add user', user);
-
-          // Temporary, needs to be removed when we're gonna work with admins:
-          socket.broadcast.emit('add cursor', user);
         });
 
-        // Temporary console.log:
-        if (admin) {
-          console.log('Welcome ' + admin.username);
-        } else {
-          console.log('Welcome random user');
-        }
+        // Add new admin:
+        socket.on('add admin', (user) => {
+          // Add admin to active users array:
+          var curUser = activeUsers.find(socket => socket.id == user.id);
+          curUser.admin = true;
+
+          io.of(namespace).emit('update admin rights', curUser);
+          socket.emit('add cursor', curUser);
+
+          // Add admin to database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $push: { 'admins': {
+              id: curUser.id,
+              username: curUser.username,
+              admin: curUser.admin,
+              root: curUser.root
+            } } }
+          );
+        });
+
+        // Remove existing admin:
+        socket.on('remove admin', (admin) => {
+          // Remove admin from active users array:
+          var curUser = activeUsers.find(socket => socket.id == admin.id);
+          curUser.admin = false;
+
+          io.of(namespace).emit('update admin rights', curUser);
+          socket.emit('remove cursor', curUser);
+
+          // Remove admin from database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $pull: { 'admins': { id: curUser.id } } }
+          );
+        });
 
         // Show other client's cursor in real-time:
         socket.on('cursor move', (latlng) => {
@@ -173,8 +210,8 @@ app.get('/trip/:id', function (req, res) {
 
         // Add a route segment:
         socket.on('edit route', (latLng) => {
-          console.log('latLng: ', latLng);
           // Push coords to the cache data and serve this back to the clients:
+          console.log('latLng: ', latLng);
           namespacePath.latLngs.push(latLng);
           io.of(namespace).emit('add route segment', namespacePath.latLngs);
 
@@ -220,10 +257,6 @@ app.get('/trip/:id', function (req, res) {
             );
           } else if (data.remove == 1) {
             var field = 'path.' + data.idx;
-            db.collection('trips').updateOne(
-              { id: trip.id },
-              { $unset: { [field]: 1 } }
-            );
             db.collection('trips').updateOne(
               { id: trip.id },
               { $set: { [field]: data.newLatLng } }

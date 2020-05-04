@@ -2,6 +2,7 @@ import cursor from './cursor.js';
 
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
+  admin: false,
   path: [],
   polylines: [],
   initMap: function (namespace) {
@@ -24,6 +25,9 @@ export default {
         zoom: 17
       });
 
+      // Request admin update from server:
+      namespace.emit('request admin update');
+
       // Request path data update from server:
       namespace.emit('request update path data');
 
@@ -43,71 +47,70 @@ export default {
 
       // Calculate latLng from point on screen:
       google.maps.event.addDomListener(map, 'mousemove', (e) => {
-        var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
-        var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
-        var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
-        var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
-        namespace.emit('cursor move', latlng);
+        if (self.admin) {
+          var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
+          var swBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.sw);
+          var worldPoint = new google.maps.Point(e.clientX / scale + swBoundInPx.x, e.clientY / scale + neBoundInPx.y);
+          var latlng = self.map.getProjection().fromPointToLatLng(worldPoint);
+          namespace.emit('cursor move', latlng);
+        }
       });
 
       // Broadcast when a client clicks on the map:
       google.maps.event.addDomListener(map, 'mousedown', (e) => {
-        namespace.emit('cursor click', true);
+        if (self.admin) namespace.emit('cursor click', true);
       });
 
       // Broadcast when a client releases the click on the map:
       google.maps.event.addDomListener(map, 'mouseup', (e) => {
-        namespace.emit('cursor click', false);
+        if (self.admin) namespace.emit('cursor click', false);
       });
 
       // Build the route when clicking on the map:
       google.maps.event.addListener(self.map, 'click', (e) => {
-        namespace.emit('edit route', e.latLng);
+        if (self.admin) namespace.emit('edit route', e.latLng);
       });
 
       // Function to add new route segments:
-      function addRouteSegment(path) {
-        self.path = path;
-        if (path.length > 0 && !self.startMarker) {
-          self.startMarker = new google.maps.Marker({
-            position: path[0],
-            map: self.map,
-            draggable: true,
-            icon: {
-              url: '/images/icons/start_point.svg',
-              scaledSize: new google.maps.Size(60,60),
-              anchor: new google.maps.Point(30,55)
-            }
-          });
+      function addRouteSegment(latLng) {
+        if (self.path.length > 0) {
+          if (self.path.indexOf(latLng) == 0) {
+            self.startMarker = new google.maps.Marker({
+              position: latLng,
+              map: self.map,
+              draggable: self.admin ? true : false,
+              icon: {
+                url: '/images/icons/start_point.svg',
+                scaledSize: new google.maps.Size(60,60),
+                anchor: new google.maps.Point(30,55)
+              }
+            });
 
-          // Option to move start marker:
-          google.maps.event.addListener(self.startMarker, 'drag', (e) => {
-            // Grab first polyline if exist and change first latLng into new latLng:
-            if (self.polylines.length > 0) {
-              self.polylines[0].getPath().i[0] = e.latLng;
-              self.polylines[0].setPath(self.polylines[0].getPath().i);
-            }
-          });
+            // Option to move start marker:
+            google.maps.event.addListener(self.startMarker, 'drag', (e) => {
+              // Grab first polyline if exist and change first latLng into new latLng:
+              if (self.polylines.length > 0) {
+                self.polylines[0].getPath().i[0] = e.latLng;
+                self.polylines[0].setPath(self.polylines[0].getPath().i);
+              }
+            });
 
-          // Update path array with new latLng on dragend:
-          google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
-            namespace.emit('edit startMarker', e.latLng);
-          });
-        }
+            // Update path array with new latLng on dragend:
+            google.maps.event.addListener(self.startMarker, 'dragend', (e) => {
+              namespace.emit('edit startMarker', e.latLng);
+            });
+          } else if (self.path.indexOf(latLng) > 0) {
+            var polyline = new google.maps.Polyline({
+              path: self.path.slice(self.path.indexOf(latLng)-1, self.path.indexOf(latLng)+1),
+              map: self.map,
+              geodesic: true,
+              editable: self.admin ? true : false,
+              strokeColor: '#B3008C',
+              strokeOpacity: 1,
+              strokeWeight: 8
+            });
+            self.polylines.push(polyline);
 
-        if (path.length > 1) {
-          var polyline = new google.maps.Polyline({
-            path: path.slice(path.length-2),
-            map: self.map,
-            geodesic: true,
-            editable: true,
-            strokeColor: '#B3008C',
-            strokeOpacity: 1,
-            strokeWeight: 8
-          });
-          self.polylines.push(polyline);
-
-          self.polylines.forEach(polyline => {
             var polylineIdx, idx;
 
             // Define the indices:
@@ -139,17 +142,32 @@ export default {
 
             // Option to delete polyline:
             google.maps.event.addListener(polyline, 'click', (e) => {
-              var deleteMenu = new DeleteMenu(polyline, e.latLng);
+              if (self.admin) {
+                var deleteMenu = new DeleteMenu(polyline, e.latLng);
+              }
             });
-          });
+          }
         }
       }
 
       // Namespace listeners:
       namespace
+        .on('enable admin rights', () => {
+          self.admin = true;
+        })
+
+        .on('update admin rights', (user) => {
+          if (user.admin) {
+            self.admin = true;
+          } else {
+            self.admin = false;
+          }
+        })
+
         .on('update path data', (path) => {
           // Catch updated path data and display on the map:
-          addRouteSegment(path);
+          self.path = path;
+          path.forEach(latLng => addRouteSegment(latLng));
         })
 
         .on('change cursor', (client) => {
@@ -164,7 +182,8 @@ export default {
 
         .on('add route segment', (path) => {
           // Add a route segment:
-          addRouteSegment(path);
+          self.path = path;
+          addRouteSegment(path[path.length-1]);
         })
 
         .on('change startMarker', (path) => {
