@@ -61,6 +61,7 @@ export default {
 
     userOption.addEventListener('click', (e) => {
       this.toggleAdmin(add, id, namespace);
+      this.closeUserOption(user);
       e.preventDefault();
     });
   },
