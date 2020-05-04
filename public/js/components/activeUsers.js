@@ -1,7 +1,7 @@
 export default {
   admin: false,
   list: document.querySelector('.active-users__list'),
-  addUser: function (user) {
+  addUser: function (user, namespace) {
     var fragment = document.createDocumentFragment();
     var li = document.createElement('li');
     var a = document.createElement('a');
@@ -27,7 +27,7 @@ export default {
 
     a.addEventListener('mouseenter', (e) => {
       if (this.admin) {
-        this.userOptions(li, user.admin, user.id, user.username);
+        this.userOptions(li, user.admin, user.id, user.username, namespace);
       }
     });
 
@@ -41,7 +41,7 @@ export default {
     var curUser = Array.from(this.list.children).find(child => child.classList.contains(user.id));
     curUser.parentNode.removeChild(curUser);
   },
-  userOptions: function (user, admin, id, username) {
+  userOptions: function (user, admin, id, username, namespace) {
     var add = false;
     var userOption = document.createElement('button');
 
@@ -60,13 +60,20 @@ export default {
     user.appendChild(userOption);
 
     userOption.addEventListener('click', (e) => {
-      this.toggleAdmin(add, id);
+      this.toggleAdmin(add, id, namespace);
       e.preventDefault();
     });
   },
-  toggleAdmin: function (add, id) {
-    console.log(add);
-    console.log(id);
+  toggleAdmin: function (add, id, namespace) {
+    if (add) {
+      namespace.emit('add admin', {
+        id: id
+      });
+    } else {
+      namespace.emit('remove admin', {
+        id: id
+      });
+    }
   },
   closeUserOption: function (user) {
     var userOption = user.querySelector('.user-option');
@@ -79,7 +86,7 @@ export default {
         this.admin = true;
       })
       .on('add user', (user) => {
-        this.addUser(user);
+        this.addUser(user, namespace);
       })
       .on('user left', (user) => {
         this.removeUser(user);

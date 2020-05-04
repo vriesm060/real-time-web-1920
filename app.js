@@ -135,6 +135,22 @@ app.get('/trip/:id', function (req, res) {
         });
 
         // Add new admin:
+        socket.on('add admin', (user) => {
+          // Add admin to users array:
+          var curUser = activeUsers.find(socket => socket.id == user.id);
+          curUser.admin = true;
+
+          // Add admin to database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $push: { 'admins': {
+              id: curUser.id,
+              username: curUser.username,
+              admin: curUser.admin,
+              root: curUser.root
+            } } }
+          );
+        });
 
         // When a client submits their name:
         socket.on('post user', (user) => {
