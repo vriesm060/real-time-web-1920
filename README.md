@@ -6,11 +6,11 @@
 ## Table of contents
 
 * [Concept](#concept)
-* [Framework and Packages](#framework-and-packages)
+* [Framework and Packages](#frameworks-and-packages)
 * [How to install](#how-to-install)
 * [Getting started](#getting-started)
 * [Data Life Cycle](#data-life-cycle)
-* [Socket.io](#socket.io)
+* [Socket.io](#socketio)
 * [Google Maps API](#google-maps-api)
 * [MongoDB](#mongodb)
 * [Features](#features)
