@@ -98,7 +98,7 @@ google.maps.event.addDomListener(map, 'mousemove', (e) => {
 });
 ```
 
-_To server [app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js), and back_
+_To server [app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L196), and back_
 ```
 socket.on('cursor move', (latlng) => {
   socket.broadcast.emit('change cursor', {
@@ -108,7 +108,7 @@ socket.on('cursor move', (latlng) => {
 });
 ```
 
-_To other clients [map.js](https://github.com/vriesm060/real-time-web-1920/blob/master/public/js/components/map.js)_
+_To other clients [map.js](https://github.com/vriesm060/real-time-web-1920/blob/6e02a52f52c834be8c26a0edafef7140526d73ec/public/js/components/map.js#L173)_
 ```
 .on('change cursor', (client) => {
   // Calculate point on screen from latLng:
@@ -165,14 +165,14 @@ var cachePaths = [
 
 **This results in:**
 
-_When an admin clicks anywhere on the map ([map.js](https://github.com/vriesm060/real-time-web-1920/blob/master/public/js/components/map.js))_
+_When an admin clicks anywhere on the map ([map.js](https://github.com/vriesm060/real-time-web-1920/blob/6e02a52f52c834be8c26a0edafef7140526d73ec/public/js/components/map.js#L70))_
 ```
 google.maps.event.addListener(self.map, 'click', (e) => {
   if (self.admin) namespace.emit('edit route', e.latLng);
 });
 ```
 
-_The corresponding `latLng` gets emitted to the server ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js))_
+_The corresponding `latLng` gets emitted to the server ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L212))_
 
 ```
 socket.on('edit route', (latLng) => {
@@ -190,7 +190,7 @@ socket.on('edit route', (latLng) => {
 
 _The `latLng` is pushed in a path array on the server, for instant access and pushed in a path array on the database, for when a client refreshes the page._
 
-_This path gets served back to the clients and transformed into either a `startMarker` (first time) or `polyline`. ([map.js](https://github.com/vriesm060/real-time-web-1920/blob/master/public/js/components/map.js))_
+_This path gets served back to the clients and transformed into either a `startMarker` (first time) or `polyline`. ([map.js](https://github.com/vriesm060/real-time-web-1920/blob/6e02a52f52c834be8c26a0edafef7140526d73ec/public/js/components/map.js#L77))_
 
 ```
 if (self.path.indexOf(latLng) == 0) {
@@ -226,7 +226,7 @@ if (self.path.indexOf(latLng) == 0) {
 The App uses [MongoDB](https://www.mongodb.com/) as its database. Here we store all the created trips and the associated data in a collection called **trips**.
 
 Each trip is an BSON object which looks like the following:<br>
-_[app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)_
+_[app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L43)_
 ```
 var trip = {
   id: uuid.generate(),
@@ -264,7 +264,7 @@ Last but not least we define an `admins` array where we store the first admin, t
 
 The following shows some database actions performed from the server.
 
-**Connecting to the database ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Connecting to the database ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L85)):**
 ```
 client.connect(err => {
   if (err) throw err;
@@ -277,7 +277,7 @@ client.connect(err => {
 }
 ```
 
-**Adding an admin ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Adding an admin ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L168)):**
 ```
 db.collection('trips').updateOne(
   { id: trip.id },
@@ -290,7 +290,7 @@ db.collection('trips').updateOne(
 );
 ```
 
-**Removing an admin ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Removing an admin ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L189)):**
 ```
 db.collection('trips').updateOne(
   { id: trip.id },
@@ -298,7 +298,7 @@ db.collection('trips').updateOne(
 );
 ```
 
-**Add a route segment ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Add a route segment ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L219)):**
 ```
 db.collection('trips').updateOne(
   { id: trip.id },
@@ -306,7 +306,7 @@ db.collection('trips').updateOne(
 );
 ```
 
-**Edit a polyline ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Edit a polyline ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L251)):**
 ```
 db.collection('trips').updateOne(
   { id: trip.id },
@@ -317,7 +317,7 @@ db.collection('trips').updateOne(
 );
 ```
 
-**Delete a polyline ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/master/app.js)):**
+**Delete a polyline ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/d6eb5d2badb8101bb6f43858be47c3d541fa2678/app.js#L279)):**
 ```
 db.collection('trips').updateOne(
   { id: trip.id },
