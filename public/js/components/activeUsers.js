@@ -1,4 +1,5 @@
 export default {
+  admin: false,
   list: document.querySelector('.active-users__list'),
   addUser: function (user) {
     var fragment = document.createDocumentFragment();
@@ -23,13 +24,60 @@ export default {
     a.appendChild(fullname);
 
     this.list.appendChild(fragment);
+
+    a.addEventListener('mouseenter', (e) => {
+      if (this.admin) {
+        this.userOptions(li, user.admin, user.id, user.username);
+      }
+    });
+
+    li.addEventListener('mouseleave', (e) => {
+      if (this.admin) {
+        this.closeUserOption(li);
+      }
+    });
   },
   removeUser: function (user) {
     var curUser = Array.from(this.list.children).find(child => child.classList.contains(user.id));
     curUser.parentNode.removeChild(curUser);
   },
+  userOptions: function (user, admin, id, username) {
+    var add = false;
+    var userOption = document.createElement('button');
+
+    userOption.classList.add('user-option');
+
+    if (admin) {
+      add = false;
+      userOption.classList.add('remove-admin');
+      userOption.textContent = 'Verwijder ' + username + ' als Admin.';
+    } else {
+      add = true;
+      userOption.classList.add('add-admin');
+      userOption.textContent = 'Geef ' + username + ' Admin rechten.';
+    }
+
+    user.appendChild(userOption);
+
+    userOption.addEventListener('click', (e) => {
+      this.toggleAdmin(add, id);
+      e.preventDefault();
+    });
+  },
+  toggleAdmin: function (add, id) {
+    console.log(add);
+    console.log(id);
+  },
+  closeUserOption: function (user) {
+    var userOption = user.querySelector('.user-option');
+    if (userOption) user.removeChild(userOption);
+  },
   init: function (namespace) {
+    namespace.emit('request admin update');
     namespace
+      .on('enable admin rights', () => {
+        this.admin = true;
+      })
       .on('add user', (user) => {
         this.addUser(user);
       })

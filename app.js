@@ -134,6 +134,8 @@ app.get('/trip/:id', function (req, res) {
           socket.emit('update path data', trip.path);
         });
 
+        // Add new admin:
+
         // When a client submits their name:
         socket.on('post user', (user) => {
           // Add client to the active users list:

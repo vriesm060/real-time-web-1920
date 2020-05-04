@@ -48,6 +48,10 @@
     display: block;
     width: 100%;
     list-style-type: none;
+
+    & > li {
+      position: relative;
+    }
   }
 }
 
@@ -59,7 +63,9 @@
   margin: .5rem .84375rem;
   color: $color-secondary;
   text-decoration: none;
-  @include prefix(transform, scale(.5,.5));
+  cursor: pointer;
+  @include prefix(transform, translateX(0));
+  @include prefix(transition, transform .3s $cubic-bezier);
   @include prefix(animation, showUser 1s $cubic-bezier forwards);
 
   &__initial {
@@ -83,6 +89,11 @@
     margin: 0 #{.5 * $spacing-unit};
     font-size: 1em;
     line-height: 1;
+  }
+
+  &:hover,
+  &:active {
+    @include prefix(transform, translateX(10px));
   }
 
   &.admin {
@@ -116,13 +127,61 @@
 }
 
 @-webkit-keyframes showUser {
-  0% {
-    opacity: 0;
-    -webkit-transform: scale(.6,.6);
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@-moz-keyframes showUser {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@-o-keyframes showUser {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes showUser {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/********************
+  User option
+********************/
+
+.user-option {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: block;
+  min-width: 10rem;
+  min-height: $spacing-unit;
+  padding: .59375rem;
+  border-width: .125rem;
+  border-style: solid;
+  border-radius: #{.5 * $spacing-unit};
+  background-color: transparent;
+  font-size: .75em;
+  cursor: pointer;
+
+  &.add-admin {
+    border-color: $color-secondary;
+    color: $color-secondary;
+
+    &:hover,
+    &:focus {
+      color: $color-primary-dark;
+      background-color: $color-secondary;
+    }
   }
-  100% {
-    opacity: 1;
-    -webkit-transform: scale(1,1);
+
+  &.remove-admin {
+    border-color: $color-error;
+    color: $color-error;
+
+    &:hover,
+    &:focus {
+      color: $color-white;
+      background-color: $color-error;
+    }
   }
 }
 
