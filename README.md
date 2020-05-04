@@ -85,7 +85,7 @@ Socket.io is a real-time engine which is responsible for the real-time events ha
 
 **A great example of this real-time connection:**
 
-_From client [map.js](https://github.com/vriesm060/real-time-web-1920/blob/master/public/js/components/map.js)_
+_From client [map.js](https://github.com/vriesm060/real-time-web-1920/blob/6e02a52f52c834be8c26a0edafef7140526d73ec/public/js/components/map.js#L49)_
 ```
 google.maps.event.addDomListener(map, 'mousemove', (e) => {
   if (self.admin) {
