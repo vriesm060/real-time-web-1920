@@ -136,7 +136,7 @@ app.get('/trip/:id', function (req, res) {
 
         // Add new admin:
         socket.on('add admin', (user) => {
-          // Add admin to users array:
+          // Add admin to active users array:
           var curUser = activeUsers.find(socket => socket.id == user.id);
           curUser.admin = true;
 
@@ -149,6 +149,19 @@ app.get('/trip/:id', function (req, res) {
               admin: curUser.admin,
               root: curUser.root
             } } }
+          );
+        });
+
+        // Remove existing admin:
+        socket.on('remove admin', (admin) => {
+          // Remove admin from active users array:
+          var curUser = activeUsers.find(socket => socket.id == admin.id);
+          curUser.admin = false;
+
+          // Remove admin from database:
+          db.collection('trips').updateOne(
+            { id: trip.id },
+            { $pull: { 'admins': { id: curUser.id } } }
           );
         });
 
