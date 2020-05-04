@@ -142,11 +142,27 @@ app.get('/trip/:id', function (req, res) {
           socket.emit('update path data', trip.path);
         });
 
+        // When a client submits their name:
+        socket.on('post user', (user) => {
+          // Add client to the active users list:
+          user.id = socket.handshake.session.id;
+          user.namespace = namespace;
+          user.admin = false;
+          user.root = false;
+          activeUsers.push(user);
+
+          // Show client is online:
+          io.of(namespace).emit('add user', user);
+        });
+
         // Add new admin:
         socket.on('add admin', (user) => {
           // Add admin to active users array:
           var curUser = activeUsers.find(socket => socket.id == user.id);
           curUser.admin = true;
+
+          io.of(namespace).emit('update admin rights', curUser);
+          socket.emit('add cursor', curUser);
 
           // Add admin to database:
           db.collection('trips').updateOne(
@@ -166,24 +182,14 @@ app.get('/trip/:id', function (req, res) {
           var curUser = activeUsers.find(socket => socket.id == admin.id);
           curUser.admin = false;
 
+          io.of(namespace).emit('update admin rights', curUser);
+          socket.emit('remove cursor', curUser);
+
           // Remove admin from database:
           db.collection('trips').updateOne(
             { id: trip.id },
             { $pull: { 'admins': { id: curUser.id } } }
           );
-        });
-
-        // When a client submits their name:
-        socket.on('post user', (user) => {
-          // Add client to the active users list:
-          user.id = socket.handshake.session.id;
-          user.namespace = namespace;
-          user.admin = false;
-          user.root = false;
-          activeUsers.push(user);
-
-          // Show client is online:
-          io.of(namespace).emit('add user', user);
         });
 
         // Show other client's cursor in real-time:

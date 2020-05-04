@@ -156,6 +156,14 @@ export default {
           self.admin = true;
         })
 
+        .on('update admin rights', (user) => {
+          if (user.admin) {
+            self.admin = true;
+          } else {
+            self.admin = false;
+          }
+        })
+
         .on('update path data', (path) => {
           // Catch updated path data and display on the map:
           self.path = path;

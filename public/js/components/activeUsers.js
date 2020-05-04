@@ -12,8 +12,8 @@ export default {
     fragment.appendChild(li);
 
     a.classList.add('user');
-    if (user.admin) a.classList.add('admin');
     if (user.root) a.classList.add('root');
+    if (user.admin) a.classList.add('admin');
     li.appendChild(a);
 
     initial.classList.add('user__initial');
@@ -28,7 +28,7 @@ export default {
 
     a.addEventListener('mouseenter', (e) => {
       if (this.root && !a.classList.contains('root')) {
-        this.userOptions(li, user.admin, user.id, user.username, namespace);
+        this.userOptions(li, user.id, user.username, namespace);
       }
     });
 
@@ -42,13 +42,13 @@ export default {
     var curUser = Array.from(this.list.children).find(child => child.classList.contains(user.id));
     curUser.parentNode.removeChild(curUser);
   },
-  userOptions: function (user, admin, id, username, namespace) {
+  userOptions: function (user, id, username, namespace) {
     var add = false;
     var userOption = document.createElement('button');
 
     userOption.classList.add('user-option');
 
-    if (admin) {
+    if (user.children[0].classList.contains('admin')) {
       add = false;
       userOption.classList.add('remove-admin');
       userOption.textContent = 'Verwijder ' + username + ' als Admin.';
@@ -81,11 +81,22 @@ export default {
     var userOption = user.querySelector('.user-option');
     if (userOption) user.removeChild(userOption);
   },
+  toggleClasslist: function (user) {
+    var curUser = Array.from(this.list.children).find(child => child.classList.contains(user.id));
+    if (user.admin) {
+      curUser.children[0].classList.add('admin');
+    } else {
+      curUser.children[0].classList.remove('admin');
+    }
+  },
   init: function (namespace) {
     namespace.emit('request root update');
     namespace
       .on('enable root rights', () => {
         this.root = true;
+      })
+      .on('update admin rights', (user) => {
+        this.toggleClasslist(user);
       })
       .on('add user', (user) => {
         this.addUser(user, namespace);
