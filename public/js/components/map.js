@@ -145,7 +145,6 @@ export default {
               if (self.admin) {
                 var deleteMenu = new DeleteMenu(polyline, e.latLng);
               }
-
             });
           }
         }
@@ -153,14 +152,14 @@ export default {
 
       // Namespace listeners:
       namespace
+        .on('enable admin rights', () => {
+          self.admin = true;
+        })
+
         .on('update path data', (path) => {
           // Catch updated path data and display on the map:
           self.path = path;
           path.forEach(latLng => addRouteSegment(latLng));
-        })
-
-        .on('enable admin rights', () => {
-          self.admin = true;
         })
 
         .on('change cursor', (client) => {

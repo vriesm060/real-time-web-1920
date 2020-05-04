@@ -66,7 +66,6 @@ app.post('/trip', function (req, res) {
     var db = client.db('trippie');
     db.collection('trips').insertOne(trip, (err, result) => {
       if (err) throw err;
-      console.log('trip added');
       res.redirect('/trip/' + trip.id);
     });
   });
@@ -107,7 +106,11 @@ app.get('/trip/:id', function (req, res) {
         var admin = trip.admins.find(admin => admin.id == socket.handshake.session.id);
         if (admin) {
           // Give client admin rights:
-          socket.join('admin');
+          if (admin.root) {
+            socket.join('root');
+          } else {
+            socket.join('admin');
+          }
 
           // Add admin to list of active users:
           admin.namespace = namespace;
@@ -122,11 +125,16 @@ app.get('/trip/:id', function (req, res) {
 
         // Show login modal to each client that isn't an admin:
         socket.emit('show login');
-        io.of(namespace).to('admin').emit('hide login');
+        io.of(namespace).to('root').to('admin').emit('hide login');
 
         // Activate maps functions for admins only:
         socket.on('request admin update', () => {
-          io.of(namespace).to('admin').emit('enable admin rights');
+          io.of(namespace).to('root').to('admin').emit('enable admin rights');
+        });
+
+        // Activate add/remove admins functions for root only:
+        socket.on('request root update', () => {
+          io.of(namespace).to('root').emit('enable root rights');
         });
 
         // Catch request from client to update path data:
@@ -178,13 +186,6 @@ app.get('/trip/:id', function (req, res) {
           io.of(namespace).emit('add user', user);
         });
 
-        // Temporary console.log:
-        if (admin) {
-          console.log('Welcome ' + admin.username);
-        } else {
-          console.log('Welcome random user');
-        }
-
         // Show other client's cursor in real-time:
         socket.on('cursor move', (latlng) => {
           socket.broadcast.emit('change cursor', {
@@ -203,8 +204,8 @@ app.get('/trip/:id', function (req, res) {
 
         // Add a route segment:
         socket.on('edit route', (latLng) => {
-          console.log('latLng: ', latLng);
           // Push coords to the cache data and serve this back to the clients:
+          console.log('latLng: ', latLng);
           namespacePath.latLngs.push(latLng);
           io.of(namespace).emit('add route segment', namespacePath.latLngs);
 

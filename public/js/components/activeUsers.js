@@ -1,5 +1,5 @@
 export default {
-  admin: false,
+  root: false,
   list: document.querySelector('.active-users__list'),
   addUser: function (user, namespace) {
     var fragment = document.createDocumentFragment();
@@ -13,6 +13,7 @@ export default {
 
     a.classList.add('user');
     if (user.admin) a.classList.add('admin');
+    if (user.root) a.classList.add('root');
     li.appendChild(a);
 
     initial.classList.add('user__initial');
@@ -26,13 +27,13 @@ export default {
     this.list.appendChild(fragment);
 
     a.addEventListener('mouseenter', (e) => {
-      if (this.admin) {
+      if (this.root && !a.classList.contains('root')) {
         this.userOptions(li, user.admin, user.id, user.username, namespace);
       }
     });
 
     li.addEventListener('mouseleave', (e) => {
-      if (this.admin) {
+      if (this.root && !a.classList.contains('root')) {
         this.closeUserOption(li);
       }
     });
@@ -81,10 +82,10 @@ export default {
     if (userOption) user.removeChild(userOption);
   },
   init: function (namespace) {
-    namespace.emit('request admin update');
+    namespace.emit('request root update');
     namespace
-      .on('enable admin rights', () => {
-        this.admin = true;
+      .on('enable root rights', () => {
+        this.root = true;
       })
       .on('add user', (user) => {
         this.addUser(user, namespace);
