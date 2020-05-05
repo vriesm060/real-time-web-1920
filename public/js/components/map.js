@@ -33,7 +33,13 @@ export default {
       // Init the map:
       self.map = new google.maps.Map(map, {
         zoom: 17,
-        disableDefaultUI: true
+        disableDefaultUI: true,
+        styles: [
+          {
+            featureType: 'poi.business',
+            stylers: [{visibility: 'off'}]
+          },
+        ]
       });
 
       // Request admin update from server:
@@ -220,6 +226,10 @@ export default {
           // Add a route segment:
           self.path = path;
           addRouteSegment(path[path.length-1]);
+        })
+
+        .on('add places', (places) => {
+
         })
 
         .on('change startMarker', (path) => {
