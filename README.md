@@ -1,5 +1,6 @@
 #  Trippie
 **Plan samen je trip**
+![Route example](readme_assets/route_example.png)
 
 ---
 
@@ -24,7 +25,7 @@ You want to plan a cycling trip for next weekend? Want to go on a roadtrip in th
 
 With **Trippie** you can create your own trip together with someone else in real-time. Using Google Maps you're able to build a route, piece by piece, for a trip you desire to take later on in real life.
 
-<!-- Trippie can show you some nice places close to your route in advance, so you know what to look out for. :eyes: -->
+Trippie can show you some nice places close to your route in advance, so you know what to look out for. :eyes:
 
 ---
 
@@ -74,6 +75,26 @@ Now it's time to run the App: `npm start` and enjoy! :sunglasses:
 ## Data Life Cycle
 
 This next diagram displays how the data travels through the App and connects to the API.
+
+![Data Life Cycle](readme_assets/data_life_cycle.png)
+
+As you can see, we divide the clients into 3 groups:
+
+* **The Root client:** the one who creates the trip. He/she has the rights to edit the route and add or remove clients as Admin. There can only be one Root client.
+* **The Admin client:** who has the rights to edit the route. There can be multiple Admin clients at a time.
+* **The regular client:** who can only watch other people editing the route. Everyone, except Root, will start out as a regular client.
+
+All three clients are connected to the server via a socket connection and will receive updates in real-time.
+
+The Root and Admin are also connected directly to the Google Maps API. This is because we want to render the map and this can only be done client-side. The clients will interact with the map (e.g. add polylines, edit part of the route) and the Google Maps API will return latLng coordinates, which the client then sends to the server through socket. The server will return this information to all other clients.
+
+### The Server
+
+The server is also connected to the MongoDB database. The server will send and update data to the database whenever a client makes an update on the map.
+
+Later, when another client enters or an existing client refreshes the page, the server will request the data back from the database and serve this to the clients.
+
+The server is also connected to the Google Maps API. It requests a location from the query entered by the client. This is done through Geocoding. It also requests the nearby places for each route segment added by a client.
 
 ---
 
@@ -127,6 +148,9 @@ The server then passes this `latLng` back to the other clients, including the id
 
 On these clients the `latLng` gets transformed back into a point on the screen (x,y).
 
+_Real-time cursor in action:_
+![Socket.io cursor](readme_assets/socketio_cursor.png)
+
 ---
 
 ## Google Maps API
@@ -162,8 +186,10 @@ var cachePaths = [
 ```
 
 **Example of path array in the database:**
+![MongoDB path](readme_assets/mongodb_path.png)
 
 **This results in:**
+![Route example](readme_assets/route_example.png)
 
 _When an admin clicks anywhere on the map ([map.js](https://github.com/vriesm060/real-time-web-1920/blob/6e02a52f52c834be8c26a0edafef7140526d73ec/public/js/components/map.js#L70))_
 ```
@@ -217,7 +243,37 @@ if (self.path.indexOf(latLng) == 0) {
 }
 ```
 
-<!-- ### Places API -->
+### Places API
+
+The App makes use of the Google Maps Places API, which gives us the opportunity to find places (hotels, restaurants, companies, etc.) nearby a given location. In our case, the location is the latest segment added to the route by a client.
+
+Each time someone adds a route segment, we activate the Places API and find nearby places, which we will add to the map in the form of a marker. The information about a place is always up-to-date.
+
+**The request from the server to the API ([app.js](https://github.com/vriesm060/real-time-web-1920/blob/9b204c7aadf769c1573f738aa5dc67a712c3eba2/app.js#L258))**
+```
+maps
+  .placesNearby({
+    params: {
+      key: process.env.GOOGLE_MAPS_API_KEY,
+      location: data.latLng,
+      language: 'nl',
+      radius: 10
+    }
+  })
+  .then(result => {
+    if (result.data.status === Status.OK) {
+      // Focus on businesses only:
+      var places = result.data.results.filter(data => data.business_status);
+
+      // Map the data we want:
+      places = places.map(place => {
+        return {
+          location: place.geometry.location,
+          name: place.name,
+          openNow: place.opening_hours ? place.opening_hours.open_now : undefined
+        }
+      });
+```
 
 ---
 
@@ -235,22 +291,25 @@ var trip = {
     literal: req.body.trip
   },
   location: {
-    value: req.body.location.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
-    literal: req.body.location
+    literal: data.address_components[0].long_name,
+    latLng: data.geometry.location
   },
   path: [],
+  places: [],
   admins: [
     {
       id: req.body.socketId,
       username: req.body.username,
       admin: true,
-      root: true
+      root: true,
+      firstTime: true,
     }
   ]
 };
 ```
 
 In the database it looks like this:
+![MongoDB database](readme_assets/mongodb_database.png)
 
 The `id` is a random generated uuid. The trip `name` and `location` are from the form you need to fill in at the beginning. The `path` array will be updated with `latLng` coordinates as the route is being build.
 
@@ -340,8 +399,7 @@ The major features in a nutshell:
 * [x] :dancers: Sharing a trip with everyone you want
 * [x] :information_desk_person: Separating Admin users who are able to edit the route and regular users who can only watch
 * [x] :heavy_plus_sign: :heavy_minus_sign: The option to add or remove other Admins
-* [ ] :eight_pointed_black_star: SnapToRoads technique so your created route will 'snap' to the correct roads on the map
-* [ ] :house: Real-time place information for places close to your route
+* [x] :house: Real-time place information for places close to your route
 
 ---
 
