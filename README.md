@@ -177,9 +177,13 @@ var cachePaths = [
   {
     namespace: namespace,
     latLngs: [
-      { lat: 52.37101572853635, lng: 4.912352675285341 },
-      { lat: 52.37002660001327, lng: 4.910893553581239 },
-      { lat: 52.370603048467906, lng: 4.909906500663759 }
+      { lat: 40.713689925000836, lng: -74.00362318490295 },
+      { lat: 40.71506521033391, lng: -74.00312965844421 },
+      { lat: 40.71555182066939, lng: -74.00302700766004 },
+      { lat: 40.716210509387196, lng: -74.00443248518384 },
+      { lat: 40.71691060559276, lng: -74.0040365141351 },
+      { lat: 40.717435106802434, lng: -74.0035698097665 },
+      { lat: 40.717122032934114, lng: -74.00290462193081 },
     ]
   }
 ];
@@ -309,7 +313,7 @@ var trip = {
 ```
 
 In the database it looks like this:
-<br><img src="readme_assets/mongodb_database.png" alt="MongoDB database" width="250px">
+<br><img src="readme_assets/mongodb_database.png" alt="MongoDB database" width="350px">
 
 The `id` is a random generated uuid. The trip `name` and `location` are from the form you need to fill in at the beginning. The `path` array will be updated with `latLng` coordinates as the route is being build.
 
@@ -400,10 +404,6 @@ The major features in a nutshell:
 * [x] :information_desk_person: Separating Admin users who are able to edit the route and regular users who can only watch
 * [x] :heavy_plus_sign: :heavy_minus_sign: The option to add or remove other Admins
 * [x] :house: Real-time place information for places close to your route
-
----
-
-## Wishlist
 
 ---
 
