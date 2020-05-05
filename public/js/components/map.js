@@ -3,6 +3,7 @@ import cursor from './cursor.js';
 export default {
   'PUBLIC_KEY': 'AIzaSyDvdEQGcYau4ARuX1911u9d34CYPNaWn4k',
   admin: false,
+  firstTime: true,
   path: [],
   polylines: [],
   initMap: function (namespace) {
@@ -13,6 +14,10 @@ export default {
     script.defer = true;
     script.async = true;
 
+    namespace.on('update firstTime', (firstTime) => {
+      self.firstTime = firstTime;
+    });
+
     // Init Google Maps function:
     window.initMap = function () {
       var map = document.getElementById('map');
@@ -21,6 +26,9 @@ export default {
 
       // Request map location:
       namespace.emit('request map location');
+
+      // Request firstTime update:
+      namespace.emit('request firstTime update');
 
       // Init the map:
       self.map = new google.maps.Map(map, {
@@ -71,7 +79,20 @@ export default {
 
       // Build the route when clicking on the map:
       google.maps.event.addListener(self.map, 'click', (e) => {
-        if (self.admin) namespace.emit('edit route', e.latLng);
+        if (self.firstTime && self.tutorialModal) {
+          self.tutorialModal.close(document.querySelector('.tutorial-modal'));
+        }
+
+        if (self.path.length == 0) {
+          self.tutorialModal = new TutorialModal('polyline');
+        } else {
+          self.firstTime = false;
+        }
+
+        if (self.admin) namespace.emit('edit route', {
+          latLng: e.latLng,
+          firstTime: self.firstTime
+        });
       });
 
       // Function to add new route segments:
@@ -175,6 +196,14 @@ export default {
           // Catch updated path data and display on the map:
           self.path = path;
           path.forEach(latLng => addRouteSegment(latLng));
+
+          if (self.admin && self.firstTime) {
+            if (self.path.length == 0) {
+              self.tutorialModal = new TutorialModal('startMarker');
+            } else {
+              self.tutorialModal = new TutorialModal('polyline');
+            }
+          }
         })
 
         .on('change cursor', (client) => {
@@ -219,6 +248,40 @@ export default {
           self.polylines.splice(data.polyline, 1);
           self.path = data.path;
         });
+
+      // Create a tutorial modal:
+      function TutorialModal(type) {
+        var fragment = document.createDocumentFragment();
+        var modal = document.createElement('div');
+        var p = document.createElement('p');
+        var button = document.createElement('button');
+
+        modal.classList.add('tutorial-modal');
+        fragment.appendChild(modal);
+
+        if (type == 'startMarker') {
+          p.innerHTML = 'Klik op de map om een <strong>start positie</strong> te maken';
+        } else if (type == 'polyline') {
+          p.innerHTML = 'Klik op de map om een <strong>lijn aan de route</strong> toe te voegen';
+        }
+
+        modal.appendChild(p);
+
+        button.classList.add('close-btn');
+        button.innerHTML = '&times;';
+        modal.appendChild(button);
+        document.body.appendChild(fragment);
+
+        button.addEventListener('click', (e) => {
+          this.close(modal);
+          e.preventDefault();
+        });
+      }
+
+      TutorialModal.prototype.close = function (modal) {
+        modal.parentNode.removeChild(modal);
+        self.tutorialModal = undefined;
+      }
 
       // Create the delete menu:
       function DeleteMenu(polyline, latLng) {
