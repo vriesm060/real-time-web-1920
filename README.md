@@ -15,7 +15,6 @@
 * [Google Maps API](#google-maps-api)
 * [MongoDB](#mongodb)
 * [Features](#features)
-* [Wishlist](#wishlist)
 
 ---
 
