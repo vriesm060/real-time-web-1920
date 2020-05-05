@@ -17,6 +17,7 @@ var uuid = require('short-uuid');
 var MongoClient = require('mongodb').MongoClient;
 var uri = 'mongodb+srv://max:' + process.env.MONGO_PW + '@trippiecluster-qqgdb.mongodb.net/test?retryWrites=true&w=majority';
 var client = new MongoClient(uri, { useNewUrlParser: true }, { useUnifiedTopology: true });
+var maps = new Client({});
 
 app.use(session);
 app.use(bodyParser.json());
@@ -40,9 +41,7 @@ app.get('/', function (req, res) {
 
 app.post('/trip', function (req, res) {
   // Maps geocoding:
-  var maps = new Client({});
-
-  var location = maps
+  maps
     .geocode({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY,
@@ -65,6 +64,7 @@ app.post('/trip', function (req, res) {
             latLng: data.geometry.location
           },
           path: [],
+          places: [],
           admins: [
             {
               id: req.body.socketId,
@@ -244,9 +244,55 @@ app.get('/trip/:id', function (req, res) {
 
         // Add a route segment:
         socket.on('edit route', (data) => {
-          // Push coords to the cache data and serve this back to the clients:
+          // Push coords to the cache data:
           console.log('latLng: ', data.latLng);
           namespacePath.latLngs.push(data.latLng);
+
+          // If the route is more than just a startMarker:
+          if (namespacePath.latLngs.length > 1) {
+            maps
+              .placesNearby({
+                params: {
+                  key: process.env.GOOGLE_MAPS_API_KEY,
+                  location: data.latLng,
+                  language: 'nl',
+                  radius: 10
+                }
+              })
+              .then(result => {
+                if (result.data.status === Status.OK) {
+                  // Focus on businesses only:
+                  var places = result.data.results.filter(data => data.business_status);
+
+                  // Map the data we want:
+                  places = places.map(place => {
+                    return {
+                      location: place.geometry.location,
+                      name: place.name,
+                      photos: place.photos ? place.photos.filter((photo, i) => i < 2) : []
+                    }
+                  });
+
+                  // Pass places along to all the clients:
+                  io.of(namespace).emit('add places', places);
+
+                  // Add the places to the database:
+                  db.collection('trips').updateOne(
+                    { id: trip.id },
+                    { $push: { 'places': {
+                      $each: places
+                    } } }
+                  );
+                } else {
+                  console.log(result.data.error_message);
+                }
+              })
+              .catch(err => {
+                console.log(err);
+              });
+          }
+
+          // Serve the data back to the clients:
           io.of(namespace).emit('add route segment', namespacePath.latLngs);
 
           // Update database:
