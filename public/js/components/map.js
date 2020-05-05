@@ -19,9 +19,11 @@ export default {
       var bounds;
       var scale = Math.pow(2, 17);
 
+      // Request map location:
+      namespace.emit('request map location');
+
       // Init the map:
       self.map = new google.maps.Map(map, {
-        center: { lat: 52.369270, lng: 4.909590 },
         zoom: 17
       });
 
@@ -152,6 +154,10 @@ export default {
 
       // Namespace listeners:
       namespace
+        .on('add map location', (latLng) => {
+          self.map.setCenter(latLng);
+        })
+
         .on('enable admin rights', () => {
           self.admin = true;
         })

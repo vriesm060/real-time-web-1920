@@ -39,36 +39,58 @@ app.get('/', function (req, res) {
 });
 
 app.post('/trip', function (req, res) {
-  // Create trip object:
-  var trip = {
-    id: uuid.generate(),
-    name: {
-      value: req.body.trip.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
-      literal: req.body.trip
-    },
-    location: {
-      value: req.body.location.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
-      literal: req.body.location
-    },
-    path: [],
-    admins: [
-      {
-        id: req.body.socketId,
-        username: req.body.username,
-        admin: true,
-        root: true
-      }
-    ]
-  };
+  // Maps geocoding:
+  var maps = new Client({});
 
-  client.connect(err => {
-    if (err) throw err;
-    var db = client.db('trippie');
-    db.collection('trips').insertOne(trip, (err, result) => {
-      if (err) throw err;
-      res.redirect('/trip/' + trip.id);
+  var location = maps
+    .geocode({
+      params: {
+        key: process.env.GOOGLE_MAPS_API_KEY,
+        address: req.body.location
+      }
+    })
+    .then(result => {
+      if (result.data.status === Status.OK) {
+        var data = result.data.results[0];
+
+        // Create trip object:
+        var trip = {
+          id: uuid.generate(),
+          name: {
+            value: req.body.trip.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
+            literal: req.body.trip
+          },
+          location: {
+            literal: data.address_components[0].long_name,
+            latLng: data.geometry.location
+          },
+          path: [],
+          admins: [
+            {
+              id: req.body.socketId,
+              username: req.body.username,
+              admin: true,
+              root: true
+            }
+          ]
+        };
+
+        client.connect(err => {
+          if (err) throw err;
+          var db = client.db('trippie');
+          db.collection('trips').insertOne(trip, (err, result) => {
+            if (err) throw err;
+            res.redirect('/trip/' + trip.id);
+          });
+        });
+
+      } else {
+        console.log(result.data.error_message);
+      }
+    })
+    .catch(err => {
+      console.log(err);
     });
-  });
 });
 
 app.get('/trip/:id', function (req, res) {
@@ -94,6 +116,11 @@ app.get('/trip/:id', function (req, res) {
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
+        // Add map location:
+        socket.on('request map location', () => {
+          socket.emit('add map location', trip.location.latLng);
+        });
+
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
