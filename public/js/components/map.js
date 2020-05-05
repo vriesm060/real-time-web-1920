@@ -24,7 +24,8 @@ export default {
 
       // Init the map:
       self.map = new google.maps.Map(map, {
-        zoom: 17
+        zoom: 17,
+        disableDefaultUI: true
       });
 
       // Request admin update from server:
