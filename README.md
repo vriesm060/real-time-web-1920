@@ -186,7 +186,7 @@ var cachePaths = [
 ```
 
 **Example of path array in the database:**
-<img src="readme_assets/mongodb_path.png" alt="MongoDB path" style="width:auto;height:200px;">
+<img src="readme_assets/mongodb_path.png" alt="MongoDB path" width="200px">
 
 **This results in:**
 ![Route example](readme_assets/route_example.png)
