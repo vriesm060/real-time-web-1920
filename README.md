@@ -186,7 +186,7 @@ var cachePaths = [
 ```
 
 **Example of path array in the database:**
-<img src="readme_assets/mongodb_path.png" alt="MongoDB path" style="width:200px;height:auto;">
+<img src="readme_assets/mongodb_path.png" alt="MongoDB path" style="width:auto;height:200px;">
 
 **This results in:**
 ![Route example](readme_assets/route_example.png)
@@ -309,8 +309,7 @@ var trip = {
 ```
 
 In the database it looks like this:
-<!-- ![MongoDB database](readme_assets/mongodb_database.png) -->
-<img src="readme_assets/mongodb_database.png" alt="MongoDB database" style="width:200px;height:auto;">
+<img src="readme_assets/mongodb_database.png" alt="MongoDB database" style="width:auto;height:200px;">
 
 The `id` is a random generated uuid. The trip `name` and `location` are from the form you need to fill in at the beginning. The `path` array will be updated with `latLng` coordinates as the route is being build.
 
