@@ -173,6 +173,11 @@ app.get('/trip/:id', function (req, res) {
           socket.emit('update path data', trip.path);
         });
 
+        // Catch request from client to update places:
+        socket.on('request update places', () => {
+          socket.emit('update places', trip.places);
+        });
+
         // When a client submits their name:
         socket.on('post user', (user) => {
           // Add client to the active users list:
@@ -269,7 +274,7 @@ app.get('/trip/:id', function (req, res) {
                     return {
                       location: place.geometry.location,
                       name: place.name,
-                      photos: place.photos ? place.photos.filter((photo, i) => i < 2) : []
+                      openNow: place.opening_hours ? place.opening_hours.open_now : undefined
                     }
                   });
 

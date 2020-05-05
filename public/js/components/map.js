@@ -48,6 +48,9 @@ export default {
       // Request path data update from server:
       namespace.emit('request update path data');
 
+      // Request places update from server:
+      namespace.emit('request update places');
+
       // Change map bounds:
       google.maps.event.addListener(self.map, 'bounds_changed', (e) => {
         var getBounds = self.map.getBounds();
@@ -182,10 +185,14 @@ export default {
 
       // Add places:
       function addPlaceNearby(place, i) {
-        console.log(place);
+        var openNow = place.openNow == true
+          ? '<br><strong>Nu open</strong>' : place.openNow == false
+          ? '<br><strong>Gesloten</strong>'
+          : '';
 
         var infoWindow = new google.maps.InfoWindow({
-          content: place.name
+          maxWidth: 125,
+          content: place.name + openNow
         });
 
         setTimeout(function () {
@@ -235,6 +242,12 @@ export default {
               self.tutorialModal = new TutorialModal('polyline');
             }
           }
+        })
+
+        .on('update places', (places) => {
+          places.forEach((place, i) => {
+            addPlaceNearby(place, i);
+          });
         })
 
         .on('change cursor', (client) => {
