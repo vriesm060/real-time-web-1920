@@ -39,36 +39,59 @@ app.get('/', function (req, res) {
 });
 
 app.post('/trip', function (req, res) {
-  // Create trip object:
-  var trip = {
-    id: uuid.generate(),
-    name: {
-      value: req.body.trip.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
-      literal: req.body.trip
-    },
-    location: {
-      value: req.body.location.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
-      literal: req.body.location
-    },
-    path: [],
-    admins: [
-      {
-        id: req.body.socketId,
-        username: req.body.username,
-        admin: true,
-        root: true
-      }
-    ]
-  };
+  // Maps geocoding:
+  var maps = new Client({});
 
-  client.connect(err => {
-    if (err) throw err;
-    var db = client.db('trippie');
-    db.collection('trips').insertOne(trip, (err, result) => {
-      if (err) throw err;
-      res.redirect('/trip/' + trip.id);
+  var location = maps
+    .geocode({
+      params: {
+        key: process.env.GOOGLE_MAPS_API_KEY,
+        address: req.body.location
+      }
+    })
+    .then(result => {
+      if (result.data.status === Status.OK) {
+        var data = result.data.results[0];
+
+        // Create trip object:
+        var trip = {
+          id: uuid.generate(),
+          name: {
+            value: req.body.trip.replace(/\s+/g, '-').replace('/', '-').toLowerCase(),
+            literal: req.body.trip
+          },
+          location: {
+            literal: data.address_components[0].long_name,
+            latLng: data.geometry.location
+          },
+          path: [],
+          admins: [
+            {
+              id: req.body.socketId,
+              username: req.body.username,
+              admin: true,
+              root: true,
+              firstTime: true,
+            }
+          ]
+        };
+
+        client.connect(err => {
+          if (err) throw err;
+          var db = client.db('trippie');
+          db.collection('trips').insertOne(trip, (err, result) => {
+            if (err) throw err;
+            res.redirect('/trip/' + trip.id);
+          });
+        });
+
+      } else {
+        console.log(result.data.error_message);
+      }
+    })
+    .catch(err => {
+      console.log(err);
     });
-  });
 });
 
 app.get('/trip/:id', function (req, res) {
@@ -94,6 +117,11 @@ app.get('/trip/:id', function (req, res) {
       // Connect to the current trip:
       io.of(namespace).use(sharedsession(session, { autoSave: true }));
       io.of(namespace).once('connection', (socket) => {
+        // Add map location:
+        socket.on('request map location', () => {
+          socket.emit('add map location', trip.location.latLng);
+        });
+
         // Show to socket who is active:
         activeUsers.forEach(user => {
           if (user.namespace == namespace) {
@@ -121,6 +149,9 @@ app.get('/trip/:id', function (req, res) {
 
           // Show admin's cursor to other clients:
           socket.broadcast.emit('add cursor', admin);
+
+          // Init admin's firstTime boolean:
+          socket.emit('update firstTime', admin.firstTime);
         }
 
         // Show login modal to each client that isn't an admin:
@@ -149,6 +180,7 @@ app.get('/trip/:id', function (req, res) {
           user.namespace = namespace;
           user.admin = false;
           user.root = false;
+          user.firstTime = true;
           activeUsers.push(user);
 
           // Show client is online:
@@ -171,7 +203,8 @@ app.get('/trip/:id', function (req, res) {
               id: curUser.id,
               username: curUser.username,
               admin: curUser.admin,
-              root: curUser.root
+              root: curUser.root,
+              firstTime: curUser.firstTime
             } } }
           );
         });
@@ -181,6 +214,7 @@ app.get('/trip/:id', function (req, res) {
           // Remove admin from active users array:
           var curUser = activeUsers.find(socket => socket.id == admin.id);
           curUser.admin = false;
+          curUser.firstTime = true;
 
           io.of(namespace).emit('update admin rights', curUser);
           socket.emit('remove cursor', curUser);
@@ -209,17 +243,29 @@ app.get('/trip/:id', function (req, res) {
         });
 
         // Add a route segment:
-        socket.on('edit route', (latLng) => {
+        socket.on('edit route', (data) => {
           // Push coords to the cache data and serve this back to the clients:
-          console.log('latLng: ', latLng);
-          namespacePath.latLngs.push(latLng);
+          console.log('latLng: ', data.latLng);
+          namespacePath.latLngs.push(data.latLng);
           io.of(namespace).emit('add route segment', namespacePath.latLngs);
 
           // Update database:
           db.collection('trips').updateOne(
             { id: trip.id },
-            { $push: {'path': latLng} }
+            { $push: { 'path': data.latLng } }
           );
+
+          // Update the user's firstTime boolean:
+          if (data.firstTime == false) {
+            var curUser = activeUsers.find(user => user.id == socket.handshake.session.id);
+            curUser.firstTime = false;
+
+            db.collection('trips').updateOne(
+              { id: trip.id },
+              { $set: { 'admins.$[admin].firstTime': false } },
+              { arrayFilters: [ { 'admin.id': curUser.id } ] }
+            );
+          }
         });
 
         // Move the startMarker:

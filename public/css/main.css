@@ -8,12 +8,24 @@
   font-style: normal; }
 
 /********************
-  Kreon Light
+  Kreon
 ********************/
 @font-face {
   src: url(../fonts/kreon_light.ttf);
   font-family: 'Kreon Light';
+  font-weight: 300;
+  font-style: normal; }
+
+@font-face {
+  src: url(../fonts/kreon_regular.ttf);
+  font-family: 'Kreon Light';
   font-weight: 400;
+  font-style: normal; }
+
+@font-face {
+  src: url(../fonts/kreon_bold.ttf);
+  font-family: 'Kreon Light';
+  font-weight: 700;
   font-style: normal; }
 
 /********************
@@ -48,7 +60,7 @@ body {
   background-color: #73005A;
   font-family: "Kreon Light", serif;
   font-size: 1em;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1.7; }
 
 h1 {
@@ -63,7 +75,7 @@ button {
   color: #73005A;
   font-family: "Kreon Light", serif;
   font-size: 1.25em;
-  font-weight: 400;
+  font-weight: 300;
   line-height: 1; }
 
 button {
@@ -302,27 +314,62 @@ button {
       background-color: #FF6673; }
 
 /********************
-  Start button
+  Tutorial modal
 ********************/
-.start-btn {
+.tutorial-modal {
+  position: absolute;
+  left: 50%;
+  top: 10%;
   display: block;
-  width: calc(100% - 1.6875rem);
-  min-height: 4.375rem;
-  padding: 1.25rem;
-  border: 0.325rem solid #59FFDE;
-  border-radius: 2.1875rem;
-  margin: 2.1875rem 0.84375rem;
-  color: #59FFDE;
-  background-color: transparent;
-  font-family: "Lily Script One";
-  cursor: pointer;
-  -webkit-transition: all 0.3s ease;
-  -moz-transition: all 0.3s ease;
-  -o-transition: all 0.3s ease;
-  transition: all 0.3s ease; }
-  .start-btn:hover, .start-btn:focus {
-    color: #B3008C;
-    background-color: #59FFDE; }
+  max-width: 15rem;
+  padding: 1.09375rem;
+  padding-right: 4.375rem;
+  border-radius: .625rem;
+  color: #73005A;
+  background-color: #59FFDE;
+  box-shadow: 0 0 0 0.625rem rgba(44, 44, 44, 0.2); }
+  .tutorial-modal::before {
+    position: absolute;
+    right: 1rem;
+    bottom: -2rem;
+    display: block;
+    width: 0;
+    height: 0;
+    border: 2rem solid #59FFDE;
+    border-left-color: transparent;
+    border-top-color: transparent;
+    border-radius: .5rem;
+    -webkit-transform: rotate(-90deg);
+    -moz-transform: rotate(-90deg);
+    -o-transform: rotate(-90deg);
+    transform: rotate(-90deg);
+    content: ''; }
+  .tutorial-modal > p > strong {
+    font-weight: 700; }
+  .tutorial-modal .close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    width: 2.1875rem;
+    height: 2.1875rem;
+    padding: .46875rem;
+    border: 0.125rem solid #73005A;
+    border-radius: 50%;
+    margin: 1.09375rem;
+    color: #73005A;
+    background-color: transparent;
+    font-family: sans-serif;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-transition: all 0.3s ease;
+    -moz-transition: all 0.3s ease;
+    -o-transition: all 0.3s ease;
+    transition: all 0.3s ease; }
+    .tutorial-modal .close-btn:hover, .tutorial-modal .close-btn:focus {
+      color: #59FFDE;
+      background-color: #73005A; }
 
 /********************
   Share link

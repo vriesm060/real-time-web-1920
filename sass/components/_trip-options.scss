@@ -186,26 +186,64 @@
 }
 
 /********************
-  Start button
+  Tutorial modal
 ********************/
 
-.start-btn {
+.tutorial-modal {
+  position: absolute;
+  left: 50%;
+  top: 10%;
   display: block;
-  width: calc(100% - 1.6875rem);
-  min-height: #{2 * $spacing-unit};
-  padding: 1.25rem;
-  border: .325rem solid $color-secondary;
-  border-radius: $spacing-unit;
-  margin: $spacing-unit .84375rem;
-  color: $color-secondary;
-  background-color: transparent;
-  font-family: $heading-ff;
-  cursor: pointer;
-  @include prefix(transition, all .3s ease);
+  max-width: 15rem;
+  padding: #{.5 * $spacing-unit};
+  padding-right: #{2 * $spacing-unit};
+  border-radius: .625rem;
+  color: $color-primary-dark;
+  background-color: $color-secondary;
+  box-shadow: 0 0 0 .625rem rgba(44,44,44,.2);
 
-  &:hover,
-  &:focus {
-    color: $color-primary;
-    background-color: $color-secondary;
+  &::before {
+    position: absolute;
+    right: 1rem;
+    bottom: -2rem;
+    display: block;
+    width: 0;
+    height: 0;
+    border: 2rem solid $color-secondary;
+    border-left-color: transparent;
+    border-top-color: transparent;
+    border-radius: .5rem;
+    @include prefix(transform, rotate(-90deg));
+    content: '';
+  }
+
+  & > p > strong {
+    font-weight: 700;
+  }
+
+  & .close-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    width: $spacing-unit;
+    height: $spacing-unit;
+    padding: .46875rem;
+    border: .125rem solid $color-primary-dark;
+    border-radius: 50%;
+    margin: #{.5 * $spacing-unit};
+    color: $color-primary-dark;
+    background-color: transparent;
+    font-family: sans-serif;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    @include prefix(transition, all .3s ease);
+
+    &:hover,
+    &:focus {
+      color: $color-secondary;
+      background-color: $color-primary-dark;
+    }
   }
 }
