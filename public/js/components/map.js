@@ -32,7 +32,7 @@ export default {
 
       // Init the map:
       self.map = new google.maps.Map(map, {
-        zoom: 17,
+        zoom: 18,
         disableDefaultUI: true,
         styles: [
           {
@@ -180,6 +180,31 @@ export default {
         }
       }
 
+      // Add places:
+      function addPlaceNearby(place, i) {
+        console.log(place);
+
+        var infoWindow = new google.maps.InfoWindow({
+          content: place.name
+        });
+
+        setTimeout(function () {
+          var placeMarker = new google.maps.Marker({
+            position: place.location,
+            animation: google.maps.Animation.DROP,
+            map: self.map
+          });
+
+          google.maps.event.addListener(placeMarker, 'mouseover', (e) => {
+            infoWindow.open(self.map, placeMarker);
+          });
+
+          google.maps.event.addListener(placeMarker, 'mouseout', (e) => {
+            infoWindow.close();
+          });
+        }, i * 500);
+      }
+
       // Namespace listeners:
       namespace
         .on('add map location', (latLng) => {
@@ -229,7 +254,9 @@ export default {
         })
 
         .on('add places', (places) => {
-
+          places.forEach((place, i) => {
+            addPlaceNearby(place, i);
+          });
         })
 
         .on('change startMarker', (path) => {
