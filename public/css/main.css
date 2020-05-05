@@ -491,6 +491,18 @@ button {
   font-size: 1em; }
 
 /********************
+  Info Window
+********************/
+#map .gm-style-iw,
+#map .gm-style-iw-c,
+#map .gm-style-iw-d {
+  color: #73005A; }
+  #map .gm-style-iw strong,
+  #map .gm-style-iw-c strong,
+  #map .gm-style-iw-d strong {
+    font-weight: 700; }
+
+/********************
   Login
 ********************/
 .login-overlay {

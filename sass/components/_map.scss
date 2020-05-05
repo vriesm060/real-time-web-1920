@@ -62,3 +62,17 @@
   color: $color-black;
   font-size: 1em;
 }
+
+/********************
+  Info Window
+********************/
+
+#map .gm-style-iw,
+#map .gm-style-iw-c,
+#map .gm-style-iw-d {
+  color: $color-primary-dark;
+
+  & strong {
+    font-weight: 700;
+  }
+}

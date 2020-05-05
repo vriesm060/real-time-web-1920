@@ -32,8 +32,14 @@ export default {
 
       // Init the map:
       self.map = new google.maps.Map(map, {
-        zoom: 17,
-        disableDefaultUI: true
+        zoom: 18,
+        disableDefaultUI: true,
+        styles: [
+          {
+            featureType: 'poi.business',
+            stylers: [{visibility: 'off'}]
+          },
+        ]
       });
 
       // Request admin update from server:
@@ -41,6 +47,9 @@ export default {
 
       // Request path data update from server:
       namespace.emit('request update path data');
+
+      // Request places update from server:
+      namespace.emit('request update places');
 
       // Change map bounds:
       google.maps.event.addListener(self.map, 'bounds_changed', (e) => {
@@ -174,6 +183,35 @@ export default {
         }
       }
 
+      // Add places:
+      function addPlaceNearby(place, i) {
+        var openNow = place.openNow == true
+          ? '<br><strong>Nu open</strong>' : place.openNow == false
+          ? '<br><strong>Gesloten</strong>'
+          : '';
+
+        var infoWindow = new google.maps.InfoWindow({
+          maxWidth: 125,
+          content: place.name + openNow
+        });
+
+        setTimeout(function () {
+          var placeMarker = new google.maps.Marker({
+            position: place.location,
+            animation: google.maps.Animation.DROP,
+            map: self.map
+          });
+
+          google.maps.event.addListener(placeMarker, 'mouseover', (e) => {
+            infoWindow.open(self.map, placeMarker);
+          });
+
+          google.maps.event.addListener(placeMarker, 'mouseout', (e) => {
+            infoWindow.close();
+          });
+        }, i * 500);
+      }
+
       // Namespace listeners:
       namespace
         .on('add map location', (latLng) => {
@@ -206,6 +244,12 @@ export default {
           }
         })
 
+        .on('update places', (places) => {
+          places.forEach((place, i) => {
+            addPlaceNearby(place, i);
+          });
+        })
+
         .on('change cursor', (client) => {
           // Calculate point on screen from latLng:
           var neBoundInPx = self.map.getProjection().fromLatLngToPoint(bounds.ne);
@@ -220,6 +264,12 @@ export default {
           // Add a route segment:
           self.path = path;
           addRouteSegment(path[path.length-1]);
+        })
+
+        .on('add places', (places) => {
+          places.forEach((place, i) => {
+            addPlaceNearby(place, i);
+          });
         })
 
         .on('change startMarker', (path) => {
