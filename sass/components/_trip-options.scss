@@ -184,28 +184,3 @@
     }
   }
 }
-
-/********************
-  Start button
-********************/
-
-.start-btn {
-  display: block;
-  width: calc(100% - 1.6875rem);
-  min-height: #{2 * $spacing-unit};
-  padding: 1.25rem;
-  border: .325rem solid $color-secondary;
-  border-radius: $spacing-unit;
-  margin: $spacing-unit .84375rem;
-  color: $color-secondary;
-  background-color: transparent;
-  font-family: $heading-ff;
-  cursor: pointer;
-  @include prefix(transition, all .3s ease);
-
-  &:hover,
-  &:focus {
-    color: $color-primary;
-    background-color: $color-secondary;
-  }
-}
